@@ -1,0 +1,13 @@
+   26  apt-get install freenect
+   35  apt-get install libusb
+   36  apt-get install libusb=dev
+   37  apt-get install libusb-dev
+   44  apt-get install libfreenect-demos
+   46  apt-get install python-freenect
+   49  apt-get install python-numpy
+   50  apt-get install python-support
+   51  apt-get install python-opencv
+  131  apt-get install python-matplotib
+  132  apt-get install python-matplotlib
+  139  history |grep install
+  140  history |grep install > t
