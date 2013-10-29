@@ -154,6 +154,7 @@ class Plotter:
 	  if remoteCellCoord[0] != zone:
 	    self._sendUpdatesForZone(zone, zoneUpdates)
 	    zoneUpdates = []
+            zone = remoteCellCoord[0]  # ADDED TO FIX!!!
 	  remoteCellUpdate = update_message.CellUpdate(localCellState.state, (remoteCellCoord[1][0], remoteCellCoord[1][1]))
 	  zoneUpdates.append(remoteCellUpdate)
 	self._sendUpdatesForZone(zone, zoneUpdates)
