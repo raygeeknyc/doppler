@@ -15,10 +15,10 @@ SLOW_THRESHOLD = 05
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 # How many seconds we leave an object at rest before marking it as STILL
-AT_REST_DURATION = 4
+AT_REST_DURATION = 9
 
 # We have 4 columns and 2 rows 
-ZONES=[1,1]
+ZONES=[4,2]
 MAXIMUM_UPDATES_IN_MESSAGE = 1200  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 1024
 
@@ -154,7 +154,7 @@ class Plotter:
 	  if remoteCellCoord[0] != zone:
 	    self._sendUpdatesForZone(zone, zoneUpdates)
 	    zoneUpdates = []
-            zone = remoteCellCoord[0]  # ADDED TO FIX!!!
+            zone = remoteCellCoord[0]
 	  remoteCellUpdate = update_message.CellUpdate(localCellState.state, (remoteCellCoord[1][0], remoteCellCoord[1][1]))
 	  zoneUpdates.append(remoteCellUpdate)
 	self._sendUpdatesForZone(zone, zoneUpdates)
@@ -184,8 +184,9 @@ class Plotter:
 
     def _getRendererAddress(self, col, row):
 	rendererIndex = (update_message.RENDERER_ADDRESS_BASE_OCTET + 
-	  ZONES[1] * row + col)
+	  ZONES[0] * row + col)
 	address = update_message.RENDERER_ADDRESS_BASE + str(rendererIndex)
+        logging.debug("_getRendererAddress for %d,%d is %s." % (col, row, rendererIndex))
 	return address
 
     def _rendererConnection(self, address):
@@ -224,34 +225,14 @@ class Plotter:
     def finish(self):
 	logging.info("TODO closing sockets")
 
-    def testSendUpdates(self):
+    def testSendUpdates(self, baseCol, baseRow):
 	testUpdates = []
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, 0)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, 1)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, 2)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, 3)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, 4)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (self.COLUMNS-3, 0)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (self.COLUMNS-2, 0)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (self.COLUMNS-1, 0)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, self.ROWS-3)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, self.ROWS-2)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (0, self.ROWS-1)))
-
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_APPROACH_FAST, (10, 10)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (10, 11)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (11, 10)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (11, 11)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (12, 12)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (13, 13)))
-	self.sendTestUpdates(testUpdates)
-	testUpdates = []
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_APPROACH_FAST, (20, 20)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (20, 21)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (21, 20)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (21, 21)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (22, 22)))
-	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (23, 23)))
+	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (baseCol, baseRow)))
+	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (baseCol+1, baseRow+1)))
+	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (baseCol+2, baseRow+2)))
+	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (baseCol+3, baseRow+3)))
+	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_APPROACH_SLOW, (baseCol+1, baseRow-1)))
+	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_APPROACH_SLOW, (baseCol-1, baseRow+1)))
 	self.sendTestUpdates(testUpdates)
 
     def testSetAllCells(self):
@@ -265,23 +246,23 @@ class Plotter:
 			allCellDistances[col].append(globalDistance)
     	self.initAllCellsStates(allCellDistances)
 
-    def testUpdateCellStates(self):
+    def testUpdateCellStates(self, baseCol, baseRow):
 	now = time.time()
-	col = 3
-	for row in range(0,10):
+	col = baseCol
+	for row in range(baseRow, baseRow+10):
 		self.updateCellState(col, row, 10, now)
 	col += 1
-	for row in range(0,10):
+	for row in range(baseRow, baseRow+10):
 		self.updateCellState(col, row, 90, now)
 	col += 1
-	for row in range(0,10):
+	for row in range(baseRow, baseRow+10):
 		self.updateCellState(col, row, 110, now)
 	col += 1
-	for row in range(0,10):
+	for row in range(baseRow, baseRow+10):
 		self.updateCellState(col, row, 190, now)
 			
 def runTests():
-	logging.getLogger().setLevel(logging.INFO)
+	logging.getLogger().setLevel(logging.DEBUG)
 	plotter = Plotter()
 	logging.info("testSetAllCells")
 	plotter.testSetAllCells()
@@ -290,40 +271,22 @@ def runTests():
 	plotter.refreshCells()
 	time.sleep(2)
 	logging.info("testUpdateCellStates")
-	plotter.testUpdateCellStates()
+	plotter.testUpdateCellStates(60,10)
+	plotter.testUpdateCellStates(3,10)
+	plotter.testUpdateCellStates(10, plotter.ROWS-26)
+	plotter.testUpdateCellStates(40, 5)
+	plotter.testUpdateCellStates(plotter.COLUMNS-4, 15)
 	plotter.refreshCells()
 	logging.info("testSendUpdates")
-	plotter.testSendUpdates()
+	plotter.testSendUpdates(10,10)
+	plotter.testSendUpdates(40,18)
+	plotter.testSendUpdates(40,40)
+	plotter.testSendUpdates(70,10)
+	plotter.testSendUpdates(100,35)
+	plotter.testSendUpdates(20,21)
+	plotter.testSendUpdates(plotter.COLUMNS-2, 3)
 	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	time.sleep(1)
-	logging.info("updateIdleCells")
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
+	#time.sleep(1)
+	#logging.info("updateIdleCells")
+	#plotter.updateIdleCells(time.time())
+	#plotter.refreshCells()

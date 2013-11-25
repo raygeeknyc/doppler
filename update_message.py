@@ -1,7 +1,9 @@
 import string
 
-RENDERER_ADDRESS_BASE = "192.168.0."  # rainbowpi
-RENDERER_ADDRESS_BASE_OCTET = 144     # rainbowpi
+RENDERER_ADDRESS_BASE = "192.168.1."  # beaglexm
+RENDERER_ADDRESS_BASE_OCTET = 101     # beaglexm0
+#RENDERER_ADDRESS_BASE = "192.168.0."  # rainbowpi
+#RENDERER_ADDRESS_BASE_OCTET = 144     # rainbowpi
 #RENDERER_ADDRESS_BASE = "127.0.0."  # octets ending in a dot
 #RENDERER_ADDRESS_BASE_OCTET = 1
 RENDERER_PORT = 5001

@@ -18,9 +18,9 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 30
-    CELL_HEIGHT = 30
-    CELL_MARGIN = 2
+    CELL_WIDTH = 15
+    CELL_HEIGHT = 15
+    CELL_MARGIN = 0
 
     def __init__(self, left, top):
       self._left = left

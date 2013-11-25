@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 "Install install freenect libusb libusb=dev libusb-dev libfreenect-demos python-freenect python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
-"Test with import sensor;reload(sensor);tester=sensor.stitcher(0,1,2,0,0);tester.plotMappedDepths()"
+"Test with import sensor;reload(sensor)"
 
 import copy
 import errno
-#import freenect
+import freenect
 import logging
 import numpy
 import random
@@ -54,9 +54,9 @@ class Stitcher(object):
 		self._kinect_center = kinect_center_index
 		self._kinect_right = kinect_right_index
 
-		self._depth_left = None
-		self._depth_center = None
-		self._depth_right = None
+		self._depth_left = []
+		self._depth_center = []
+		self._depth_right = []
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
@@ -74,19 +74,27 @@ class Stitcher(object):
 		else:
 			depth_map = self._depth_right
 			depth_col = spot_subcol - (LEFT_SENSOR_EDGE + SENSOR_COLUMNS)
-		#logging.debug("actual cell is %d,%d = %d" % (depth_col, spot_subrow, depth_map[depth_col][spot_subrow]))
-		return depth_map[depth_col][spot_subrow]
+		#logging.debug("actual cell coord is %d,%d" % (depth_col, spot_subrow))
+		#logging.debug("whose value is %d" % depth_map[depth_col][spot_subrow])
+		#logging.debug("map is %d,%d" % (len(depth_map), len(depth_map[0])))
+		return depth_map[spot_subrow][depth_col]
 
 	def getSensorDepthMaps(self):
-		if self._depth_left:
+		if len(self._depth_left):
 			self._old_depth_left, self._old_depth_timestamp_left = self._depth_left, self._depth_timestamp_left
 			self._old_depth_center, self._old_depth_timestamp_center = self._depth_center, self._depth_timestamp_center
 			self._old_depth_right, self._old_depth_timestamp_right = self._depth_right, self._depth_timestamp_right
 		if not self._testing:
 			logging.debug("Getting depth maps from 3 sensors")
+			logging.debug("sensor %d"  % self._kinect_left)
 			self._depth_left, self._depth_timestamp_left = freenect.sync_get_depth(self._kinect_left)
+			logging.debug("done")
+			logging.debug("sensor %d"  % self._kinect_center)
 			self._depth_center, self._depth_timestamp_center = freenect.sync_get_depth(self._kinect_center)
+			logging.debug("done")
+			logging.debug("sensor %d"  % self._kinect_right)
 			self._depth_right, self._depth_timestamp_right = freenect.sync_get_depth(self._kinect_right)
+			logging.debug("done")
 		else:
 			logging.debug("Getting 3 dummy depth maps")
 			start = time.time()
@@ -113,11 +121,11 @@ class Stitcher(object):
 		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR)
 		#logging.debug("Cell col maps to (%d:%d)" % (spot_col_start, spot_col_end))
 		spot_samples = []
-		for spot_subcol in range(spot_col_start, min(spot_col_end+1, STITCHED_COLUMNS-1)):
+		for spot_subcol in range(min(STITCHED_COLUMNS-1,spot_col_start), min(spot_col_end+1, STITCHED_COLUMNS-1)):
 			spot_row_start = int(row * self.ROW_SCALING_FACTOR)
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR)
 			#logging.debug("Cell row maps to (%d:%d)" % (spot_row_start, spot_row_end))
-			for spot_subrow in range(spot_row_start, min(spot_row_end+1, STITCHED_ROWS-1)):
+			for spot_subrow in range(min(spot_row_start, STITCHED_ROWS-1), min(spot_row_end+1, STITCHED_ROWS-1)):
 				#logging.debug("Getting depth for %d,%d" % (spot_subcol, spot_subrow))
 				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
 				#logging.debug("spot depth now %d" % spot_depth)
@@ -128,8 +136,6 @@ class Stitcher(object):
 		now = time.time()
 		self.getSensorDepthMaps()
 		self.plotMappedDepths(now)
-		self.plotter.refreshCells()
-		self.plotter.updateIdleCells(now)
 
 	def initPlotter(self):
 		self.plotter = plotter.Plotter()
@@ -142,18 +148,17 @@ class Stitcher(object):
 		logging.debug("initial distance %s" % str(typical_distance))
 		self.plotter.setAllCellDistances(typical_distance)
 
-logging.getLogger().setLevel(logging.DEBUG)
-tester=Stitcher(0,1,2,0,0)
-tester.initPlotter()
-for iteration in range(0, 10):
-	logging.info("update %d" % iteration)
+logging.getLogger().setLevel(logging.INFO)
+logging.debug("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
+stitcher=Stitcher(2,1,0,0,0,testing=False)
+stitcher.initPlotter()
+while True:
 	start = time.time()
-	tester.updateDepthMaps()
+	stitcher.updateDepthMaps()
 	logging.info("Update took %f secs" % (time.time() - start))
-for iteration in range(0, 10):
-	logging.info("idle %d" % iteration)
 	now = time.time()
-	tester.plotter.updateIdleCells(now)
-	tester.plotter.refreshCells()
-	logging.debug("Idle took %f secs" % (time.time() - now))
-	time.sleep(0.6)
+	stitcher.plotter.refreshCells()
+	logging.info("Refresh took %f secs" % (time.time() - now))
+	now = time.time()
+	stitcher.plotter.updateIdleCells(now)
+	logging.info("Idle took %f secs" % (time.time() - now))
