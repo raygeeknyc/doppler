@@ -13,9 +13,9 @@ import plotter
 import time
 
 # The margin to cut out of the right side of the left sensor's map
-LEFT_OVERLAP_COLUMNS = 20
+LEFT_OVERLAP_COLUMNS = 0
 # The margin to cut out of the left side of the right sensor's map
-RIGHT_OVERLAP_COLUMNS = 20
+RIGHT_OVERLAP_COLUMNS = 0
 # The minimum by which a depth reading must change to be detected
 DEPTH_DELTA_THRESHOLD = 50
 # The known width of a sensor's depth map
@@ -121,11 +121,13 @@ class Stitcher(object):
 		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR)
 		#logging.debug("Cell col maps to (%d:%d)" % (spot_col_start, spot_col_end))
 		spot_samples = []
-		for spot_subcol in range(min(STITCHED_COLUMNS-1,spot_col_start), min(spot_col_end+1, STITCHED_COLUMNS-1)):
+		# for spot_subcol in range(min(STITCHED_COLUMNS-1,spot_col_start), min(spot_col_end+1, STITCHED_COLUMNS-1)):
+		for spot_subcol in range(spot_col_start, spot_col_end+1):
 			spot_row_start = int(row * self.ROW_SCALING_FACTOR)
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR)
 			#logging.debug("Cell row maps to (%d:%d)" % (spot_row_start, spot_row_end))
-			for spot_subrow in range(min(spot_row_start, STITCHED_ROWS-1), min(spot_row_end+1, STITCHED_ROWS-1)):
+			# for spot_subrow in range(min(spot_row_start, STITCHED_ROWS-1), min(spot_row_end+1, STITCHED_ROWS-1)):
+			for spot_subrow in range(spot_row_start, spot_row_end+1):
 				#logging.debug("Getting depth for %d,%d" % (spot_subcol, spot_subrow))
 				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
 				#logging.debug("spot depth now %d" % spot_depth)
