@@ -104,13 +104,20 @@ class Stitcher(object):
 			logging.debug("Generated maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self, now):
-		"Send updates to the plotters depth map, from the stitched sensor maps, using the min of sensor cells that correspond to each plotter cell."
+		"""
+		Send updates to the plotters depth map, from the stitched sensor maps,
+		using the min of sensor cells that correspond to each plotter cell.
+		Horizontally flip the plotter map since the libfreenect library is flipping the depth stream, as mentioned in release notes.
+		It should be OK to flip at this coarse level as we are averaging the sensor points around a given cell so the orientation
+		within a cell's sensor cells should not matter.
+		"""
 		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
 		for spot_col in range(0, self.plotter.COLUMNS):
+			flipped_col = self.plotter.COLUMNS - 1 - spot_col
 			spot_row = 0.0
 			for spot_row in range(0, self.plotter.ROWS):
-				#logging.debug("virtual cell %d,%d" % (spot_col, spot_row))
-				spot_area, spot_depth = self.calculateMergedDepth(spot_col, spot_row)
+				#logging.debug("virtual cell %d,%d" % (flipped_col, spot_row))
+				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				#logging.debug("Plotter cell %d,%d: area %d, depth %d" % (spot_col, spot_row, spot_area, spot_depth))
 				self.plotter.updateCellState(spot_col, spot_row, spot_depth, now)
 				
