@@ -70,6 +70,8 @@ class Plotter:
 	return ((int(globalCoordinate[0] / self.PER_ZONE_CELL_DIMENSIONS[0]), int(globalCoordinate[1] / self.PER_ZONE_CELL_DIMENSIONS[1])), (globalCoordinate[0] % self.PER_ZONE_CELL_DIMENSIONS[0], globalCoordinate[1] % self.PER_ZONE_CELL_DIMENSIONS[1]))
 
     def __init__(self):
+	self._timeConnecting = 0
+	self._timeSending = 0
         self._changedCells = []
 	self.PER_ZONE_CELL_DIMENSIONS = []
 	self.ROWS = None
@@ -141,6 +143,8 @@ class Plotter:
 	  			currentZoneUpdates.append(remoteCellUpdate)
 				self._cells[col][row][3] = False
 	self._sendUpdatesForZone(currentZone, currentZoneUpdates)
+	logging.debug("Time connecting %d" % self._timeConnecting)
+	logging.debug("Time sending %d" % self._timeSending)
 	
     def sendTestUpdates(self, localCellStates):
 	"Accumulate cellUpdates by zone, send per zone with transformed coordinates."
@@ -163,11 +167,15 @@ class Plotter:
 	"Send the cellStates to the server at (zone) if we have a connection to it."
 	if cellStates:
 		logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
+		start = time.time()
 		renderer = self._rendererConnection(self._getRendererAddress(zone[0], zone[1]))
+		self._timeConnecting += (time.time() - start)
 		if not renderer:
 			logging.error("No connection to renderer for zone %s" % str(zone))
 		else:
+			start = time.time()
 			self._sendUpdatesToRenderer(renderer, cellStates)
+			self._timeSending += (time.time() - start)
 			self._closeRenderer(renderer)
 	else:
 		logging.debug("Skipping empty updates for zone %s" % str(zone))
