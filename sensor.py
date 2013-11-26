@@ -159,7 +159,7 @@ class Stitcher(object):
 
 logging.getLogger().setLevel(logging.INFO)
 logging.debug("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
-stitcher=Stitcher(2,1,0,0,0,testing=False)
+stitcher=Stitcher(0,1,2,0,0,testing=False)
 stitcher.initPlotter()
 while True:
 	start = time.time()
