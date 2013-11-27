@@ -158,6 +158,7 @@ class Stitcher(object):
 		self.plotter.setAllCellDistances(typical_distance)
 
 logging.getLogger().setLevel(logging.INFO)
+logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 logging.debug("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 stitcher=Stitcher(0,1,2,0,0,testing=False)
 stitcher.initPlotter()
