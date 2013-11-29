@@ -231,7 +231,7 @@ class App:
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
 	except:
-		TODO: distinguish between resource not available and "real" errors
+		#TODO: distinguish between resource not available and "real" errors
 		updateData = None
 		pass
 
