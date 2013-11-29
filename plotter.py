@@ -71,17 +71,22 @@ class Plotter:
 
     def __init__(self):
 	self._timeConnecting = 0
+
 	self._timeSending = 0
         self._changedCells = []
 	self.PER_ZONE_CELL_DIMENSIONS = []
 	self.ROWS = None
 	self.COLUMNS = None
+	self._setupSocket()
 	self._getRendererConfig((0,0))
+
+    def setupSocket(self):
+	self._updateSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def _getRendererConfig(self, zone):
 	first_renderer = self._getRendererAddress(zone[0], zone[1])
 	logging.debug("Getting renderer config from %s" % first_renderer)
-	first_renderer = self._rendererConnection(first_renderer)
+	first_renderer = self._configConnection(first_renderer)
 	logging.debug("Sending config request to renderer %s" % str(first_renderer))
 	first_renderer.send(update_message.SEND_CONFIG_COMMAND)
 	logging.debug("sent config request")
@@ -164,14 +169,13 @@ class Plotter:
 	self._sendUpdatesForZone(zone, zoneUpdates)
 
     def _sendUpdatesForZone(self, zone, cellStates):
-	"Send the cellStates to the server at (zone) if we have a connection to it."
+	"Send the cellStates to the server at (zone) if we have an address for it."
 	if cellStates:
 		logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
 		start = time.time()
-		renderer = self._rendererConnection(self._getRendererAddress(zone[0], zone[1]))
-		self._timeConnecting += (time.time() - start)
+		renderer = self._getRendererAddress(zone[0], zone[1]))
 		if not renderer:
-			logging.error("No connection to renderer for zone %s" % str(zone))
+			logging.error("No renderer for zone %s" % str(zone))
 		else:
 			start = time.time()
 			self._sendUpdatesToRenderer(renderer, cellStates)
@@ -188,7 +192,7 @@ class Plotter:
 	seriesText = update_message.CellUpdate.seriesToText(cellStates)
 	logging.debug("Sending %d characters" % len(seriesText))
 	logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
-	renderer.send(seriesText)
+	self._updateSocket.sendto(seriesText, (renderer, update_message.RENDERER_PORT))
 
     def _getRendererAddress(self, col, row):
 	rendererIndex = (update_message.RENDERER_ADDRESS_BASE_OCTET + 
@@ -197,7 +201,7 @@ class Plotter:
         logging.debug("_getRendererAddress for %d,%d is %s." % (col, row, rendererIndex))
 	return address
 
-    def _rendererConnection(self, address):
+    def _configConnection(self, address):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setblocking(0)
 	tries = 0
