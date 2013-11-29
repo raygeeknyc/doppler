@@ -180,7 +180,6 @@ class Plotter:
 			start = time.time()
 			self._sendUpdatesToRenderer(renderer, cellStates)
 			self._timeSending += (time.time() - start)
-			self._closeRenderer(renderer)
 	else:
 		logging.debug("Skipping empty updates for zone %s" % str(zone))
 
