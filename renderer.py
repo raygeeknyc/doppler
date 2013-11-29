@@ -9,6 +9,7 @@ import socket
 import string
 
 HOST = ''                 # Symbolic name meaning the local host
+MAXIMUM_CONFIG_MESSAGE_LEN = 1024
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 def getPort():
@@ -97,33 +98,45 @@ class App:
 	self.redraw()
 	logging.debug("Initial cell states set")
 
-    def initializeSocket(self):
-	self._conn = None
-	self._addr = None
-	self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	self._socket.setblocking(1)
-	self._socket.bind((HOST, getPort()))
+    def initializeSockets(self):
+	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	self._dataSocket.bind((HOST, getPort()))
+
+	self._configConn = None
+	self._configAddr = None
+	self._configSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	self._configSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	self._configSocket.setblocking(1)
+	self._configSocket.bind((HOST, getPort()))
 	logging.debug("listening on port: %d" % getPort())
-	self._socket.setblocking(0)
-	self._socket.listen(1)
+	self._configSocket.setblocking(0)
+	self._configSocket.listen(1)
 
     def finish(self):
 	logging.debug("Finishing. Closing all sockets")
 	try:
-		if self._conn:
-			logging.debug("Shutting down connection")
-			self._conn.shutdown(socket.SHUT_RDWR)
-			logging.debug("Closing connection")
-			self._conn.close()
+		if self._dataConn:
+			logging.debug("Shutting down data connection")
+			self._dataConn.shutdown(socket.SHUT_RDWR)
+			logging.debug("Closing data connection")
+			self._dataConn.close()
 	except:
-		logging.exception("Error shutting down connection")
+		logging.exception("Error shutting down data connection")
+
 	try:
-		if self._socket:
-			logging.debug("Closing socket")
-			self._socket.close()
+		if self._configConn:
+			logging.debug("Shutting down config connection")
+			self._configConn.shutdown(socket.SHUT_RDWR)
+			logging.debug("Closing config connection")
+			self._configConn.close()
 	except:
-		logging.exception("Error closing socket")
+		logging.exception("Error shutting down config connection")
+	try:
+		if self._configSocket:
+			logging.debug("Closing config socket")
+			self._configSocket.close()
+	except:
+		logging.exception("Error closing config socket")
 
     def updateCell(self, cellState):
       """Change the cell described by cellState."""
@@ -168,59 +181,67 @@ class App:
                           
     def _sendRendererConfig(self):
 	"Send our client the number of cols and rows we render."
-	if not self._conn:
+	if not self._configConn:
 		logging.error("No connection.")
 		return
 	logging.info("sending Configuration")
-	self._conn.send(str(self._cols)+","+str(self._rows))
+	self._configConn.send(str(self._cols)+","+str(self._rows))
 	return
 
-    def getUpdates(self, root):
-	data = None
-	if not self._conn:
+    def getConfigRequests(self):
+	configData = None
+	if not self._configConn:
 		try:
-			self._conn, self._addr = self._socket.accept()
+			self._configConn, self._configAddr = self._configSocket.accept()
 		except:
             		pass
 	else:
 
-		data = ""
+		configData = ""
 		buffer = ""
         	waiting = True
         	logging.debug("Waiting for request")
 	        while buffer or waiting:
                 	try:
-				logging.debug("Getting request fragment")
-				buffer = string.strip(self._conn.recv(MAXIMUM_UPDATE_MESSAGE_LEN))
-				logging.debug("Received fragment of %d characters" % len(buffer))
+				logging.debug("Getting config request fragment")
+				buffer = string.strip(self._configConn.recv(MAXIMUM_CONFIG_MESSAGE_LEN))
+				logging.debug("Received config fragment of %d characters" % len(buffer))
                		        if buffer:
-					logging.debug("request fragment is '%s'...'%s'" % (buffer[:10], buffer[-10:]))
-                                	data += buffer
+					logging.debug("config request fragment is '%s'...'%s'" % (buffer[:10], buffer[-10:]))
+                                	configData += buffer
 				if waiting:
-					logging.debug("Stopping waiting, fragment is '%s'" % buffer)
+					logging.debug("Stopping waiting, config fragment is '%s'" % buffer)
 	                        	waiting = False
-				if data == update_message.SEND_CONFIG_COMMAND:
+				if configData == update_message.SEND_CONFIG_COMMAND:
 					logging.debug("Send config request was received")
 					self._sendRendererConfig()
-					data = ""
+					configData = ""
                 	except:
                         	if not waiting:
-					logging.debug("error after waiting, end of request")
+					logging.debug("error after waiting, end of config request")
                                 	break
 				else:
-					logging.debug("Error while waiting")
+					logging.debug("Error while waiting for config request")
                         	pass
-		self._conn.close()
-		logging.debug("Total request length is %d" % len(data))
-		self._conn = None
-		self._addr = None
-		if data:
-			cellUpdates = [self.expandCellUpdateMessage(cellMessage) for cellMessage in data.split("|")]
-			for expandedCellUpdate in cellUpdates:
-			  for cellUpdate in expandedCellUpdate:
-			    self.updateCell(cellUpdate)
-			self.redraw()
-	root.after(UPDATE_DELAY_MS,self.getUpdates,root)
+		self._configConn.close()
+		logging.debug("Received config request length is %d" % len(configData))
+		self._configConn = None
+		self._configAddr = None
+
+    def getCellUpdates(self):
+	updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+
+	if updateData:
+		cellUpdates = [self.expandCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+		for expandedCellUpdate in cellUpdates:
+		  for cellUpdate in expandedCellUpdate:
+		    self.updateCell(cellUpdate)
+		self.redraw()
+
+    def getRequests(self, root):
+	self.getConfigRequests()
+	self.getCellUpdates()
+	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
 
     def expandCellUpdateMessage(self, cellUpdateMessage):
@@ -243,7 +264,8 @@ class App:
 		  for row in range(yStart, yEnd):
 		    affectedCellStates.append(update_message.CellUpdate.fromText(state+","+str(col)+","+str(row)))
 	except:
-		logging.exception("Error parsing cell updates '%s'" % cellUpdateMessage)
+		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
+		return []  # drop this update
 	return affectedCellStates
 
 logging.getLogger().setLevel(logging.INFO)
@@ -256,7 +278,7 @@ signal.signal(signal.SIGINT, quit_handler)
 
 UPDATE_DELAY_MS = 10  # refresh 1/100 sec after events
 a = App(window_base)  
-window_base.after(0, a.getUpdates(window_base))
+window_base.after(0, a.getRequests(window_base))
 try:
 	window_base.mainloop()
 	logging.debug("Ending")
