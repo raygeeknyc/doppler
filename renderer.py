@@ -93,10 +93,10 @@ class App:
                            height=self._screen_height, cursor="none", background='black')
         self._changedCells = []
         self.initializeCells()
-	self.initializeSocket()
 	self.setAllCellsRandomly()
 	self.redraw()
 	logging.debug("Initial cell states set")
+	self.initializeSockets()
 
     def initializeSockets(self):
 	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -108,9 +108,9 @@ class App:
 	self._configSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	self._configSocket.setblocking(1)
 	self._configSocket.bind((HOST, getPort()))
-	logging.debug("listening on port: %d" % getPort())
 	self._configSocket.setblocking(0)
 	self._configSocket.listen(1)
+	logging.debug("listening on port: %d" % getPort())
 
     def finish(self):
 	logging.debug("Finishing. Closing all sockets")
@@ -268,7 +268,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 window_base = Tkinter.Tk()
 def quit_handler(signal, frame):
 	logging.debug("Interrupted")
