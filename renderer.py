@@ -101,6 +101,7 @@ class App:
     def initializeSockets(self):
 	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	self._dataSocket.bind((HOST, getPort()))
+	self._dataSocket.setblocking(0)
 
 	self._configConn = None
 	self._configAddr = None
@@ -115,13 +116,11 @@ class App:
     def finish(self):
 	logging.debug("Finishing. Closing all sockets")
 	try:
-		if self._dataConn:
-			logging.debug("Shutting down data connection")
-			self._dataConn.shutdown(socket.SHUT_RDWR)
+		if self._dataSocket:
 			logging.debug("Closing data connection")
-			self._dataConn.close()
+			self._dataSocket.close()
 	except:
-		logging.exception("Error shutting down data connection")
+		logging.exception("Error shutting down data socket")
 
 	try:
 		if self._configConn:
@@ -229,7 +228,11 @@ class App:
 		self._configAddr = None
 
     def getCellUpdates(self):
-	updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+	try:
+		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+	except:
+		updateData = None
+		pass
 
 	if updateData:
 		cellUpdates = [self.expandCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
