@@ -19,7 +19,7 @@ AT_REST_DURATION = 9
 
 # We have 4 columns and 2 rows 
 ZONES=[4,2]
-MAXIMUM_UPDATES_IN_MESSAGE = 1200  # This is to protect the renderers from excessively long update strings
+MAXIMUM_UPDATES_IN_MESSAGE = 768  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 1024
 
 class Plotter:
@@ -80,7 +80,7 @@ class Plotter:
 	self._setupSocket()
 	self._getRendererConfig((0,0))
 
-    def setupSocket(self):
+    def _setupSocket(self):
 	self._updateSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def _getRendererConfig(self, zone):
@@ -106,7 +106,7 @@ class Plotter:
 				break
 			pass
 	self._closeRenderer(first_renderer)
-	logging.debug("Renderer sent %s" % config)
+	logging.info("Renderer sent %s" % config)
 	if not self.PER_ZONE_CELL_DIMENSIONS:
 		self._parseConfig(config)
 
@@ -173,7 +173,7 @@ class Plotter:
 	if cellStates:
 		logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
 		start = time.time()
-		renderer = self._getRendererAddress(zone[0], zone[1]))
+		renderer = self._getRendererAddress(zone[0], zone[1])
 		if not renderer:
 			logging.error("No renderer for zone %s" % str(zone))
 		else:
@@ -191,7 +191,10 @@ class Plotter:
 	seriesText = update_message.CellUpdate.seriesToText(cellStates)
 	logging.debug("Sending %d characters" % len(seriesText))
 	logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
-	self._updateSocket.sendto(seriesText, (renderer, update_message.RENDERER_PORT))
+	try:
+		self._updateSocket.sendto(seriesText, (renderer, update_message.RENDERER_PORT))
+	except:
+		logging.exception("Error sending to '%s'" % renderer)
 
     def _getRendererAddress(self, col, row):
 	rendererIndex = (update_message.RENDERER_ADDRESS_BASE_OCTET + 
@@ -273,7 +276,7 @@ class Plotter:
 		self.updateCellState(col, row, 190, now)
 			
 def runTests():
-	logging.getLogger().setLevel(logging.DEBUG)
+	logging.getLogger().setLevel(logging.INFO)
 	plotter = Plotter()
 	logging.info("testSetAllCells")
 	plotter.testSetAllCells()
@@ -295,7 +298,7 @@ def runTests():
 	plotter.testSendUpdates(70,10)
 	plotter.testSendUpdates(100,35)
 	plotter.testSendUpdates(20,21)
-	plotter.testSendUpdates(plotter.COLUMNS-2, 3)
+	plotter.testSendUpdates(plotter.COLUMNS-6, 3)
 	plotter.refreshCells()
 	#time.sleep(1)
 	#logging.info("updateIdleCells")
