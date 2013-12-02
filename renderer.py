@@ -195,35 +195,34 @@ class App:
 			try:
 				self._configConn, self._configAddr = self._configSocket.accept()
 			except:
-      	      		pass
+      	      			pass
 		else:
-	
 			configData = ""
 			buffer = ""
-       	 	waiting = True
-      	  	logging.debug("Waiting for request")
-		        while buffer or waiting:
-       	         	try:
+       	 		waiting = True
+      		  	logging.debug("Waiting for request")
+			while buffer or waiting:
+       		        	try:
 					logging.debug("Getting config request fragment")
 					buffer = string.strip(self._configConn.recv(MAXIMUM_CONFIG_MESSAGE_LEN))
 					logging.debug("Received config fragment of %d characters" % len(buffer))
-       	        		        if buffer:
+       		        	        if buffer:
 						logging.debug("config request fragment is '%s'...'%s'" % (buffer[:10], buffer[-10:]))
-      	                          	configData += buffer
+      		                         	configData += buffer
 					if waiting:
 						logging.debug("Stopping waiting, config fragment is '%s'" % buffer)
-		                        	waiting = False
+			                       	waiting = False
 					if configData == update_message.SEND_CONFIG_COMMAND:
 						logging.debug("Send config request was received")
 						self._sendRendererConfig()
 						configData = ""
-       	         	except:
-      	                  	if not waiting:
+       		         	except:
+      		                	if not waiting:
 						logging.debug("error after waiting, end of config request")
-       	                         	break
+       		                         	break
 					else:
 						logging.debug("Error while waiting for config request")
-       		                 	pass
+       			                 	pass
 			self._configConn.close()
 			logging.debug("Received config request length is %d" % len(configData))
 			self._configConn = None
