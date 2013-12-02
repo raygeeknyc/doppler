@@ -9,18 +9,18 @@ import string
 import time
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_THRESHOLD = 20
+FAST_THRESHOLD = 55
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_THRESHOLD = 05
+SLOW_THRESHOLD = 15
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 # How many seconds we leave an object at rest before marking it as STILL
-AT_REST_DURATION = 9
+AT_REST_DURATION = 4
 
 # We have 4 columns and 2 rows 
 ZONES=[4,2]
-MAXIMUM_UPDATES_IN_MESSAGE = 768  # This is to protect the renderers from excessively long update strings
-RENDERER_CONFIG_MAX_LENGTH = 1024
+MAXIMUM_UPDATES_IN_MESSAGE = 3172  # This is to protect the renderers from excessively long update strings
+RENDERER_CONFIG_MAX_LENGTH = 512
 
 class Plotter:
     def cellStateForChange(self, old_distance, new_distance):

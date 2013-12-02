@@ -2,6 +2,7 @@
 
 import logging
 import update_message
+import threading
 import Tkinter, random
 import select
 import signal
@@ -9,7 +10,7 @@ import socket
 import string
 
 HOST = ''                 # Symbolic name meaning the local host
-MAXIMUM_CONFIG_MESSAGE_LEN = 1024
+MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 def getPort():
@@ -188,48 +189,50 @@ class App:
 	return
 
     def getConfigRequests(self):
-	configData = None
-	if not self._configConn:
-		try:
-			self._configConn, self._configAddr = self._configSocket.accept()
-		except:
-            		pass
-	else:
-
-		configData = ""
-		buffer = ""
-        	waiting = True
-        	logging.debug("Waiting for request")
-	        while buffer or waiting:
-                	try:
-				logging.debug("Getting config request fragment")
-				buffer = string.strip(self._configConn.recv(MAXIMUM_CONFIG_MESSAGE_LEN))
-				logging.debug("Received config fragment of %d characters" % len(buffer))
-               		        if buffer:
-					logging.debug("config request fragment is '%s'...'%s'" % (buffer[:10], buffer[-10:]))
-                                	configData += buffer
-				if waiting:
-					logging.debug("Stopping waiting, config fragment is '%s'" % buffer)
-	                        	waiting = False
-				if configData == update_message.SEND_CONFIG_COMMAND:
-					logging.debug("Send config request was received")
-					self._sendRendererConfig()
-					configData = ""
-                	except:
-                        	if not waiting:
-					logging.debug("error after waiting, end of config request")
-                                	break
-				else:
-					logging.debug("Error while waiting for config request")
-                        	pass
-		self._configConn.close()
-		logging.debug("Received config request length is %d" % len(configData))
-		self._configConn = None
-		self._configAddr = None
+	while True:
+		configData = None
+		if not self._configConn:
+			try:
+				self._configConn, self._configAddr = self._configSocket.accept()
+			except:
+      	      		pass
+		else:
+	
+			configData = ""
+			buffer = ""
+       	 	waiting = True
+      	  	logging.debug("Waiting for request")
+		        while buffer or waiting:
+       	         	try:
+					logging.debug("Getting config request fragment")
+					buffer = string.strip(self._configConn.recv(MAXIMUM_CONFIG_MESSAGE_LEN))
+					logging.debug("Received config fragment of %d characters" % len(buffer))
+       	        		        if buffer:
+						logging.debug("config request fragment is '%s'...'%s'" % (buffer[:10], buffer[-10:]))
+      	                          	configData += buffer
+					if waiting:
+						logging.debug("Stopping waiting, config fragment is '%s'" % buffer)
+		                        	waiting = False
+					if configData == update_message.SEND_CONFIG_COMMAND:
+						logging.debug("Send config request was received")
+						self._sendRendererConfig()
+						configData = ""
+       	         	except:
+      	                  	if not waiting:
+						logging.debug("error after waiting, end of config request")
+       	                         	break
+					else:
+						logging.debug("Error while waiting for config request")
+       		                 	pass
+			self._configConn.close()
+			logging.debug("Received config request length is %d" % len(configData))
+			self._configConn = None
+			self._configAddr = None
 
     def getCellUpdates(self):
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+		logging.debug("Received update of %d length" % len(updateData))
 	except:
 		#TODO: distinguish between resource not available and "real" errors
 		updateData = None
@@ -243,10 +246,13 @@ class App:
 		self.redraw()
 
     def getRequests(self, root):
-	self.getConfigRequests()
 	self.getCellUpdates()
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
+    def startConfigService(self):
+	self._configThread = threading.Thread(target=self.getConfigRequests)
+	self._configThread.daemon = True
+	self._configThread.start()
 
     def expandCellUpdateMessage(self, cellUpdateMessage):
 	try:
@@ -272,7 +278,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 window_base = Tkinter.Tk()
 def quit_handler(signal, frame):
 	logging.debug("Interrupted")
@@ -282,6 +288,7 @@ signal.signal(signal.SIGINT, quit_handler)
 
 UPDATE_DELAY_MS = 10  # refresh 1/100 sec after events
 a = App(window_base)  
+window_base.after(0, a.startConfigService())
 window_base.after(0, a.getRequests(window_base))
 try:
 	window_base.mainloop()
