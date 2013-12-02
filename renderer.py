@@ -13,6 +13,8 @@ HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
+UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
+
 def getPort():
 	return update_message.RENDERER_PORT
 
@@ -285,7 +287,6 @@ def quit_handler(signal, frame):
 
 signal.signal(signal.SIGINT, quit_handler)
 
-UPDATE_DELAY_MS = 10  # refresh 1/100 sec after events
 a = App(window_base)  
 window_base.after(0, a.startConfigService())
 window_base.after(0, a.getRequests(window_base))
