@@ -2,6 +2,7 @@
 
 import logging
 import update_message
+import time
 import threading
 import Tkinter, random
 import select
@@ -29,9 +30,12 @@ class PixelBlock:
     def __init__(self, left, top):
       self._left = left
       self._top = top
+      self.setColor((0,0,0))
+      self._timestamp = time.time()
 
     def setColor(self, rgb):
       self._color = tuple(rgb)
+      self._timestamp = time.time()
 
     def getColor(self):
       return self._color
@@ -58,9 +62,10 @@ class PixelBlock:
 
 _BRIGHTRED = (255,0,0)
 _BRIGHTBLUE = (0,0,255)
+_LIGHTGREY = (45,45,55)
 _DIMBLUE = (50,50,150)
 _DIMRED = (150,50,50)
-_DIMGREY = (25,20,25)
+_DIMGREY = (20,15,20)
 _NEUTRAL_COLOR = (0,0,0)
 
 CELL_COLORS = {
@@ -68,6 +73,7 @@ CELL_COLORS = {
     update_message.CellState.CHANGE_APPROACH_FAST: _BRIGHTBLUE,
     update_message.CellState.CHANGE_RECEDE_SLOW: _DIMRED,
     update_message.CellState.CHANGE_RECEDE_FAST: _BRIGHTRED,
+    update_message.CellState.CHANGE_REST: _LIGHTGREY,
     update_message.CellState.CHANGE_STILL: _DIMGREY}
 
 

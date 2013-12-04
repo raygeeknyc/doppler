@@ -14,11 +14,11 @@ FAST_THRESHOLD = 55
 SLOW_THRESHOLD = 15
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
-# How many seconds we leave an object at rest before marking it as STILL
+# How many seconds we leave an object at rest before marking it as REST
 AT_REST_DURATION = 4
 
 # We have 4 columns and 2 rows 
-ZONES=[4,2]
+ZONES=[1,1]
 MAXIMUM_UPDATES_IN_MESSAGE = 3172  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 512
 
@@ -32,24 +32,24 @@ class Plotter:
 		return update_message.CellState.CHANGE_APPROACH_FAST
 	if (old_distance - new_distance >= SLOW_THRESHOLD):
 		return update_message.CellState.CHANGE_APPROACH_SLOW
-	return update_message.CellState.CHANGE_STILL
+	return update_message.CellState.CHANGE_REST
 	
     def updateIdleCells(self, now):
-	"Mark cells which most recently had motion but not recently as STILL."
+	"Mark cells which most recently had motion but not recently as REST."
 	idleCellCount = 0
 	activeCellCount = 0
 	expiredCellCount = 0
 	for col in range(0, self.COLUMNS):
 		for row in range(0, self.ROWS):
-	  		if (self._cells[col][row][1] != update_message.CellState.CHANGE_STILL):
+	  		if (self._cells[col][row][1] != update_message.CellState.CHANGE_REST):
 				activeCellCount += 1
 	  		if (now - self._cells[col][row][2] >= AT_REST_DURATION):
 				expiredCellCount += 1
 	  		if (now - self._cells[col][row][2] >= AT_REST_DURATION
-	  			and self._cells[col][row][1] != update_message.CellState.CHANGE_STILL
+	  			and self._cells[col][row][1] != update_message.CellState.CHANGE_REST
 				and not self._cells[col][row][3]):
 					idleCellCount += 1
-	  				self._cells[col][row][1] = update_message.CellState.CHANGE_STILL
+	  				self._cells[col][row][1] = update_message.CellState.CHANGE_REST
 					self._cells[col][row][2] = now
 					self.markCellForRefresh(col, row)
 	logging.debug("%d idle cells were updated" % idleCellCount)

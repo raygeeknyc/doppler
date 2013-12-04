@@ -138,7 +138,10 @@ class Stitcher(object):
 				#logging.debug("Getting depth for %d,%d" % (spot_subcol, spot_subrow))
 				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
 				#logging.debug("spot depth now %d" % spot_depth)
-		spot_depth = numpy.median(spot_samples)
+		# if using median sampling
+		#spot_depth = numpy.median(spot_samples)
+		# if using mean sampling
+		spot_depth = numpy.mean(spot_samples)
 		return (len(spot_samples), spot_depth)
 
 	def updateDepthMaps(self):
