@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 "Install install freenect libusb libusb=dev libusb-dev libfreenect-demos python-freenect python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
+"Find numpy to change sampling method."
+
 "Test with import sensor;reload(sensor)"
 
 import copy
