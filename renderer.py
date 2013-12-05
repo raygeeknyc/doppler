@@ -9,6 +9,7 @@ import select
 import signal
 import socket
 import string
+import sys
 
 HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
@@ -96,6 +97,7 @@ class App:
         try:
           return CELL_COLORS[state]
         except KeyError:
+	  logging.error("Getting color for unknown state '%s'" % str(state))
           return _NEUTRAL_COLOR
 
     def __init__(self, master):
@@ -166,13 +168,19 @@ class App:
         logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
     
     def initializeCells(self):
-        """Set up the cells, initially color them randomly."""
+        """Set up the cells, no color set."""
         self._cells = {}
         for col in range(0, self._cols):
           col_cells = {}
           for row in range(0, self._rows):
             col_cells[row] = PixelBlock(col, row)     
           self._cells[col] = col_cells
+
+    def _dumpCells(self):
+        for col in range(0, self._cols):
+          for row in range(0, self._rows):
+	    if self._cells[col][row].getColor() != App._colorForState(update_message.CellState.CHANGE_STILL):
+	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].getColor()))
 
     def ageIdleCells(self):
 	idleCount = 0
@@ -186,11 +194,9 @@ class App:
 	      self._cells[col][row].getColor() != 
     	      App._colorForState(update_message.CellState.CHANGE_STILL) and
 	      self._cells[col][row].getTimeSinceUpdated() > CELL_IDLE_TIME):
-		cellUpdate = update_message.CellUpdate(App._colorForState(update_message.CellState.CHANGE_STILL), (col, row))
+		cellUpdate = update_message.CellUpdate(update_message.CellState.CHANGE_STILL, (col, row))
                 self.updateCell(cellUpdate)
 	        idleCount += 1
-	logging.debug("Set %d cells to idle" % idleCount)
-	logging.debug("%d non still cells" % nonStillCount)
 
     def setAllCellsRandomly(self):
         logging.debug("Setting all cells to random colors")
@@ -205,7 +211,6 @@ class App:
     def redraw(self):                          
         """Redraw all updated cells, remove cells from the update list."""
 
-        logging.debug("Updating %d cells" % len(self._changedCells))
         for cellToRefresh in self._changedCells:
             self._canvas.create_oval(cellToRefresh.getLeftTop()[0],
                                      cellToRefresh.getLeftTop()[1],
