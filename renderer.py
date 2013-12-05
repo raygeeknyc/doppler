@@ -16,6 +16,8 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
 
+CELL_IDLE_TIME = 4.0  # Set cells to idle after 4 secs of inactivity
+
 def getPort():
 	return update_message.RENDERER_PORT
 
@@ -30,12 +32,21 @@ class PixelBlock:
     def __init__(self, left, top):
       self._left = left
       self._top = top
+      self._timestamp = None
       self.setColor((0,0,0))
-      self._timestamp = time.time()
 
     def setColor(self, rgb):
       self._color = tuple(rgb)
       self._timestamp = time.time()
+
+    def getTimeStamp(self):
+      return self._timestamp
+
+    def getTimeSinceUpdated(self):
+      if self._timestamp:
+          return time.time() - self._timestamp
+      else:
+          return None
 
     def getColor(self):
       return self._color
@@ -163,8 +174,26 @@ class App:
             col_cells[row] = PixelBlock(col, row)     
           self._cells[col] = col_cells
 
+    def ageIdleCells(self):
+	idleCount = 0
+	nonStillCount = 0
+        for col in range(0, self._cols):
+          for row in range(0, self._rows):
+	    if self._cells[col][row].getTimeSinceUpdated() and self._cells[col][row].getColor() != App._colorForState(update_message.CellState.CHANGE_STILL) and (self._cells[col][row].getTimeSinceUpdated() > CELL_IDLE_TIME):
+	      #logging.debug("cell %d,%d age is %d" % (col, row, self._cells[col][row].getTimeSinceUpdated()))
+	      nonStillCount += 1
+	    if (self._cells[col][row].getTimeSinceUpdated() and
+	      self._cells[col][row].getColor() != 
+    	      App._colorForState(update_message.CellState.CHANGE_STILL) and
+	      self._cells[col][row].getTimeSinceUpdated() > CELL_IDLE_TIME):
+		cellUpdate = update_message.CellUpdate(App._colorForState(update_message.CellState.CHANGE_STILL), (col, row))
+                self.updateCell(cellUpdate)
+	        idleCount += 1
+	logging.debug("Set %d cells to idle" % idleCount)
+	logging.debug("%d non still cells" % nonStillCount)
+
     def setAllCellsRandomly(self):
-	logging.debug("Setting all cells to random colors")
+        logging.debug("Setting all cells to random colors")
 
         for col in range(0, self._cols):
           for row in range(0, self._rows):
@@ -250,10 +279,11 @@ class App:
 		for expandedCellUpdate in cellUpdates:
 		  for cellUpdate in expandedCellUpdate:
 		    self.updateCell(cellUpdate)
-		self.redraw()
 
     def getRequests(self, root):
 	self.getCellUpdates()
+	self.ageIdleCells()
+	self.redraw()
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
     def startConfigService(self):
@@ -285,7 +315,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 window_base = Tkinter.Tk()
 def quit_handler(signal, frame):
 	logging.debug("Interrupted")

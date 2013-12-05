@@ -18,6 +18,7 @@ class CellState(object):
     CHANGE_APPROACH_FAST = "A"
     CHANGE_REST = "s"
     CHANGE_STILL = "S"
+
     STATES = [
     CHANGE_RECEDE_SLOW,
     CHANGE_RECEDE_FAST,
