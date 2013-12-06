@@ -5,6 +5,7 @@ import update_message
 import time
 import threading
 import Tkinter, random
+import resource
 import select
 import signal
 import socket
@@ -18,6 +19,10 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
 
 CELL_IDLE_TIME = 4.0  # Set cells to idle after 4 secs of inactivity
+
+def MemUsedMB():
+    usage=resource.getrusage(resource.RUSAGE_SELF)
+    return (usage[2]*resource.getpagesize())/1048576.0
 
 def getPort():
 	return update_message.RENDERER_PORT
@@ -91,6 +96,9 @@ CELL_COLORS = {
 
 class App:
 
+    redraw_mem_consumption_1 = 0.0
+    redraw_mem_consumption_2 = 0.0
+
     @staticmethod
     def _colorForState(state):
         """Return the color for state, neutral if the state is unknown."""
@@ -117,6 +125,7 @@ class App:
         self.initializeCells()
 	self.setAllCellsRandomly()
 	self.redraw()
+	logging.debug("redraw max mem usage: %f,%f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2))
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
 
@@ -210,6 +219,8 @@ class App:
   
     def redraw(self):                          
         """Redraw all updated cells, remove cells from the update list."""
+	mem = MemUsedMB()
+	self._canvas.delete("all")
 
         for cellToRefresh in self._changedCells:
             self._canvas.create_oval(cellToRefresh.getLeftTop()[0],
@@ -218,8 +229,11 @@ class App:
                                      cellToRefresh.getRightBottom()[1],
                                      fill='#%02x%02x%02x' % cellToRefresh.getColor()
                                     )
+	App.redraw_mem_consumption_1 = max((MemUsedMB() - mem), App.redraw_mem_consumption_1)
         self._changedCells = []
         self._canvas.pack()                                                  
+        
+	App.redraw_mem_consumption_2 = max((MemUsedMB() - mem), App.redraw_mem_consumption_2)
                           
     def _sendRendererConfig(self):
 	"Send our client the number of cols and rows we render."
@@ -289,6 +303,7 @@ class App:
 	self.getCellUpdates()
 	self.ageIdleCells()
 	self.redraw()
+	logging.debug("redraw max mem usage: %f,%f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2))
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
     def startConfigService(self):
