@@ -9,16 +9,16 @@ import string
 import time
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_THRESHOLD = 55
+FAST_THRESHOLD = 80
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_THRESHOLD = 15
+SLOW_THRESHOLD = 50
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 # How many seconds we leave an object at rest before marking it as REST
-AT_REST_DURATION = 4
+AT_REST_DURATION = 05
 
 # We have 4 columns and 2 rows 
-ZONES=[1,1]
+ZONES=[4,2]
 MAXIMUM_UPDATES_IN_MESSAGE = 3172  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 512
 

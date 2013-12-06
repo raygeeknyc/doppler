@@ -18,7 +18,7 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
 
-CELL_IDLE_TIME = 4.0  # Set cells to idle after 4 secs of inactivity
+CELL_IDLE_TIME = 30.0  # Set cells to idle after 30.0 secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -40,6 +40,13 @@ class PixelBlock:
       self._top = top
       self._timestamp = None
       self.setColor((0,0,0))
+      self._image = None
+
+    def setImage(self, shape):
+      self._image = shape
+
+    def getImage(self):
+      return self._image
 
     def setColor(self, rgb):
       self._color = tuple(rgb)
@@ -98,6 +105,10 @@ class App:
 
     redraw_mem_consumption_1 = 0.0
     redraw_mem_consumption_2 = 0.0
+    redraw_time_consumption_1 = 0.0
+    redraw_time_consumption_2 = 0.0
+    redraw_cycle_timestamp = 0.0
+    redraw_cycle_time = 0.0
 
     @staticmethod
     def _colorForState(state):
@@ -124,8 +135,7 @@ class App:
         self._changedCells = []
         self.initializeCells()
 	self.setAllCellsRandomly()
-	self.redraw()
-	logging.debug("redraw max mem usage: %f,%f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2))
+	self.setupPixels()
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
 
@@ -192,6 +202,8 @@ class App:
 	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].getColor()))
 
     def ageIdleCells(self):
+	"""Find all cells which have not had a recent update and mark them as idle."""
+	# this is way too slow, turned off for now
 	idleCount = 0
 	nonStillCount = 0
         for col in range(0, self._cols):
@@ -217,23 +229,32 @@ class App:
               ","+str(col)+","+str(row))
             self.updateCell(cellState)
   
+    def setupPixels(self):
+        for col in range(0, self._cols):
+          for row in range(0, self._rows):
+	    cell = self._cells[col][row]
+	    cell.setImage(self._canvas.create_oval(cell.getLeftTop()[0],
+                          cell.getLeftTop()[1],
+                          cell.getRightBottom()[0],
+                          cell.getRightBottom()[1],
+                          fill='#%02x%02x%02x' % cell.getColor()
+                         ))
+
     def redraw(self):                          
         """Redraw all updated cells, remove cells from the update list."""
+	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
+        App.redraw_cycle_timestamp = time.time()
 	mem = MemUsedMB()
-	self._canvas.delete("all")
+	start = time.time()
 
         for cellToRefresh in self._changedCells:
-            self._canvas.create_oval(cellToRefresh.getLeftTop()[0],
-                                     cellToRefresh.getLeftTop()[1],
-                                     cellToRefresh.getRightBottom()[0],
-                                     cellToRefresh.getRightBottom()[1],
-                                     fill='#%02x%02x%02x' % cellToRefresh.getColor()
-                                    )
+	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % cellToRefresh.getColor())
+	App.redraw_time_consumption_1 = (time.time() - start)
 	App.redraw_mem_consumption_1 = max((MemUsedMB() - mem), App.redraw_mem_consumption_1)
         self._changedCells = []
         self._canvas.pack()                                                  
-        
 	App.redraw_mem_consumption_2 = max((MemUsedMB() - mem), App.redraw_mem_consumption_2)
+	App.redraw_time_consumption_2 = (time.time() - start)
                           
     def _sendRendererConfig(self):
 	"Send our client the number of cols and rows we render."
@@ -301,9 +322,11 @@ class App:
 
     def getRequests(self, root):
 	self.getCellUpdates()
-	self.ageIdleCells()
+	#self.ageIdleCells()  # way too slow, turn it off for now
 	self.redraw()
-	logging.debug("redraw max mem usage: %f,%f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2))
+	logging.debug("redraw max mem usage: %f,%f. Total usage: %f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2, MemUsedMB()))
+	logging.debug("redraw cycle: %f" % (App.redraw_cycle_time))
+	logging.debug("redraw time: %f, %f" % (App.redraw_time_consumption_1, App.redraw_time_consumption_2))
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
     def startConfigService(self):
@@ -335,7 +358,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 window_base = Tkinter.Tk()
 def quit_handler(signal, frame):
 	logging.debug("Interrupted")

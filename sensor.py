@@ -14,12 +14,13 @@ import random
 import plotter
 import time
 
+#SAMPLER = numpy.mean
+SAMPLER = numpy.median
+
 # The margin to cut out of the right side of the left sensor's map
 LEFT_OVERLAP_COLUMNS = 0
 # The margin to cut out of the left side of the right sensor's map
 RIGHT_OVERLAP_COLUMNS = 0
-# The minimum by which a depth reading must change to be detected
-DEPTH_DELTA_THRESHOLD = 50
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map
@@ -125,6 +126,7 @@ class Stitcher(object):
 				
 	def calculateMergedDepth(self, col, row):
 		"Calculate the depth at a plotter map's cell using the median of sensor cells that correspond to each plotter cell."
+		global SAMPLER
 		#logging.debug("Calculating merged depth for %d,%d" % (col, row))
 		spot_col_start = int(col * self.COLUMN_SCALING_FACTOR)
 		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR)
@@ -140,10 +142,7 @@ class Stitcher(object):
 				#logging.debug("Getting depth for %d,%d" % (spot_subcol, spot_subrow))
 				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
 				#logging.debug("spot depth now %d" % spot_depth)
-		# if using median sampling
-		#spot_depth = numpy.median(spot_samples)
-		# if using mean sampling
-		spot_depth = numpy.mean(spot_samples)
+		spot_depth = SAMPLER(spot_samples)
 		return (len(spot_samples), spot_depth)
 
 	def updateDepthMaps(self):
