@@ -16,7 +16,8 @@ import threading
 import time
 
 #SAMPLER = numpy.mean
-SAMPLER = numpy.median
+#SAMPLER = numpy.median
+SAMPLER = None
 
 # The margin to cut out of the right side of the left sensor's map
 LEFT_OVERLAP_COLUMNS = 0
@@ -29,10 +30,10 @@ SENSOR_ROWS = 480
 
 # Precompute these for speed, we use them often
 LEFT_SENSOR_EDGE = SENSOR_COLUMNS - LEFT_OVERLAP_COLUMNS
-RIGHT_SENSOR_EDGE = LEFT_SENSOR_EDGE + SENSOR_COLUMNS
+CENTER_SENSOR_EDGE = LEFT_SENSOR_EDGE + SENSOR_COLUMNS
 
 # The total number of columns in the stitched sensor maps
-STITCHED_COLUMNS = RIGHT_SENSOR_EDGE + SENSOR_COLUMNS - RIGHT_OVERLAP_COLUMNS
+STITCHED_COLUMNS = CENTER_SENSOR_EDGE + SENSOR_COLUMNS - RIGHT_OVERLAP_COLUMNS
 # The total number of rows in the stitched sensor maps
 STITCHED_ROWS = SENSOR_ROWS
 
@@ -58,49 +59,48 @@ class Stitcher(object):
 		self._kinect_center = kinect_center_index
 		self._kinect_right = kinect_right_index
 
-		self._depth_left = []
-		self._depth_center = []
-		self._depth_right = []
+		self._depth_maps = [[], [], []]
+
+		self._depth_timestamps = [None, None, None]
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
 
-		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_center) ,len(self._depth_center[0])))
+		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[self._kinect_center]) ,len(self._depth_maps[self._kinect_center][0])))
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
 		if spot_subcol < LEFT_SENSOR_EDGE:
-			depth_map = self._depth_left
+			depth_map = self._depth_maps[self._kinect_left]
 			depth_col = spot_subcol
-		elif spot_subcol < RIGHT_SENSOR_EDGE:
-			depth_map = self._depth_center
+		elif spot_subcol < CENTER_SENSOR_EDGE:
+			depth_map = self._depth_maps[self._kinect_center]
 			depth_col = spot_subcol - LEFT_SENSOR_EDGE
 		else:
-			depth_map = self._depth_right
-			depth_col = spot_subcol - (LEFT_SENSOR_EDGE + SENSOR_COLUMNS)
+			depth_map = self._depth_maps[self._kinect_right]
+			depth_col = spot_subcol - CENTER_SENSOR_EDGE
 		#logging.debug("actual cell coord is %d,%d" % (depth_col, spot_subrow))
 		#logging.debug("whose value is %d" % depth_map[depth_col][spot_subrow])
 		#logging.debug("map is %d,%d" % (len(depth_map), len(depth_map[0])))
 		return depth_map[spot_subrow][depth_col]
 
-	def getSensorDepthMap(self, sensor_idx, depth_map, timestamp):
-		depth_map, timestamp = freenect.sync_get_depth(sensor_idx)
+	def getSensorDepthMap(self, sensor_idx):
+		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
 
 	def getSensorDepthMaps(self):
 		start = time.time()
 		if not self._testing:
 			logging.debug("Getting depth maps from 3 sensors")
-			self._depth_left, self._depth_timestamp_left = freenect.sync_get_depth(self._kinect_left)
-			getSensorDepthMap(self._kinect_left, self._depth_left, self._depth_timestamp_left)
-			getSensorDepthMap(self._kinect_center, self._depth_center, self._depth_timestamp_center)
-			getSensorDepthMap(self._kinect_right, self._depth_right, self._depth_timestamp_right)
+			self.getSensorDepthMap(self._kinect_left)
+			self.getSensorDepthMap(self._kinect_center)
+			self.getSensorDepthMap(self._kinect_right)
 			logging.debug("done")
 		else:
 			logging.debug("Getting 3 dummy depth maps")
-			self._depth_left, self._depth_timestamp_left = getDummyDepthMap()
-			self._depth_center, self._depth_timestamp_center = getDummyDepthMap()
-			self._depth_right, self._depth_timestamp_right = getDummyDepthMap()
-		logging.debug("Generated maps in %f secs" % (time.time() - start))
+			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = getDummyDepthMap()
+			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = getDummyDepthMap()
+			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = getDummyDepthMap()
+		logging.info("Generated maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self, now):
 		"""
@@ -113,29 +113,37 @@ class Stitcher(object):
 		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
 		for spot_col in range(0, self.plotter.COLUMNS):
 			flipped_col = self.plotter.COLUMNS - 1 - spot_col
-			spot_row = 0.0
 			for spot_row in range(0, self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				self.plotter.updateCellState(spot_col, spot_row, spot_depth, now)
 				
 	def calculateMergedDepth(self, col, row):
-		"Calculate the depth at a plotter map's cell using the median of sensor cells that correspond to each plotter cell."
+		"Calculate the depth at a plotter map's cell using the specified SAMPLER."
 		global SAMPLER
-		#logging.debug("Calculating merged depth for %d,%d" % (col, row))
+
 		spot_col_start = int(col * self.COLUMN_SCALING_FACTOR)
-		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR)
-		#logging.debug("Cell col maps to (%d:%d)" % (spot_col_start, spot_col_end))
+		spot_row_start = int(row * self.ROW_SCALING_FACTOR)
+
+		# Instead of sampling the area, just return the corner of the virtual cell
+		# This is done purely for speed, the samplers take 1.x seconds per frame,
+		# whereas this takes .2x seconds per frame.
+		if SAMPLER == None:
+			spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
+			return (1, spot_depth)
+		
+		spot_col_sample = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
+		spot_row_sample = spot_row_start + int((self.ROW_SCALING_FACTOR+1) / 2)
+
+		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
+		spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
+
 		spot_samples = []
-		# for spot_subcol in range(min(STITCHED_COLUMNS-1,spot_col_start), min(spot_col_end+1, STITCHED_COLUMNS-1)):
-		for spot_subcol in range(spot_col_start, spot_col_end+1):
-			spot_row_start = int(row * self.ROW_SCALING_FACTOR)
-			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR)
-			#logging.debug("Cell row maps to (%d:%d)" % (spot_row_start, spot_row_end))
-			# for spot_subrow in range(min(spot_row_start, STITCHED_ROWS-1), min(spot_row_end+1, STITCHED_ROWS-1)):
-			for spot_subrow in range(spot_row_start, spot_row_end+1):
-				#logging.debug("Getting depth for %d,%d" % (spot_subcol, spot_subrow))
-				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
-				#logging.debug("spot depth now %d" % spot_depth)
+
+		# sample the center row and center column, double counting the center point
+		for spot_subcol in range(spot_col_start, spot_col_end):
+			spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_row_sample))
+		for spot_subrow in range(spot_row_start, spot_row_end):
+			spot_samples.append(self.getDepthAtVirtualCell(spot_col_sample, spot_subrow))
 		spot_depth = SAMPLER(spot_samples)
 		return (len(spot_samples), spot_depth)
 
