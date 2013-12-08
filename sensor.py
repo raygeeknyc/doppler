@@ -87,6 +87,7 @@ class Stitcher(object):
 		depth_map, timestamp = freenect.sync_get_depth(sensor_idx)
 
 	def getSensorDepthMaps(self):
+		start = time.time()
 		if not self._testing:
 			logging.debug("Getting depth maps from 3 sensors")
 			self._depth_left, self._depth_timestamp_left = freenect.sync_get_depth(self._kinect_left)
@@ -96,11 +97,10 @@ class Stitcher(object):
 			logging.debug("done")
 		else:
 			logging.debug("Getting 3 dummy depth maps")
-			start = time.time()
 			self._depth_left, self._depth_timestamp_left = getDummyDepthMap()
 			self._depth_center, self._depth_timestamp_center = getDummyDepthMap()
 			self._depth_right, self._depth_timestamp_right = getDummyDepthMap()
-			logging.debug("Generated maps in %f secs" % (time.time() - start))
+		logging.debug("Generated maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self, now):
 		"""
