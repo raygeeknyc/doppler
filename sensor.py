@@ -115,9 +115,7 @@ class Stitcher(object):
 			flipped_col = self.plotter.COLUMNS - 1 - spot_col
 			spot_row = 0.0
 			for spot_row in range(0, self.plotter.ROWS):
-				#logging.debug("virtual cell %d,%d" % (flipped_col, spot_row))
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
-				#logging.debug("Plotter cell %d,%d: area %d, depth %d" % (spot_col, spot_row, spot_area, spot_depth))
 				self.plotter.updateCellState(spot_col, spot_row, spot_depth, now)
 				
 	def calculateMergedDepth(self, col, row):
