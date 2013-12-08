@@ -12,6 +12,7 @@ import logging
 import numpy
 import random
 import plotter
+import threading
 import time
 
 #SAMPLER = numpy.mean
@@ -82,21 +83,16 @@ class Stitcher(object):
 		#logging.debug("map is %d,%d" % (len(depth_map), len(depth_map[0])))
 		return depth_map[spot_subrow][depth_col]
 
+	def getSensorDepthMap(self, sensor_idx, depth_map, timestamp):
+		depth_map, timestamp = freenect.sync_get_depth(sensor_idx)
+
 	def getSensorDepthMaps(self):
-		if len(self._depth_left):
-			self._old_depth_left, self._old_depth_timestamp_left = self._depth_left, self._depth_timestamp_left
-			self._old_depth_center, self._old_depth_timestamp_center = self._depth_center, self._depth_timestamp_center
-			self._old_depth_right, self._old_depth_timestamp_right = self._depth_right, self._depth_timestamp_right
 		if not self._testing:
 			logging.debug("Getting depth maps from 3 sensors")
-			logging.debug("sensor %d"  % self._kinect_left)
 			self._depth_left, self._depth_timestamp_left = freenect.sync_get_depth(self._kinect_left)
-			logging.debug("done")
-			logging.debug("sensor %d"  % self._kinect_center)
-			self._depth_center, self._depth_timestamp_center = freenect.sync_get_depth(self._kinect_center)
-			logging.debug("done")
-			logging.debug("sensor %d"  % self._kinect_right)
-			self._depth_right, self._depth_timestamp_right = freenect.sync_get_depth(self._kinect_right)
+			getSensorDepthMap(self._kinect_left, self._depth_left, self._depth_timestamp_left)
+			getSensorDepthMap(self._kinect_center, self._depth_center, self._depth_timestamp_center)
+			getSensorDepthMap(self._kinect_right, self._depth_right, self._depth_timestamp_right)
 			logging.debug("done")
 		else:
 			logging.debug("Getting 3 dummy depth maps")
