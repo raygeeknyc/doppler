@@ -11,7 +11,7 @@ import time
 # The minimum change in distance that is seen as a "fast" approach or recession
 FAST_THRESHOLD = 80
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_THRESHOLD = 50
+SLOW_THRESHOLD = 40
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 # How many seconds we leave an object at rest before marking it as REST

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 "Install install freenect libusb libusb=dev libusb-dev libfreenect-demos python-freenect python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
-"Find numpy to change sampling method."
-
 "Test with import sensor;reload(sensor)"
 
 import copy
@@ -15,14 +13,17 @@ import plotter
 import threading
 import time
 
-#SAMPLER = numpy.mean
+# If using a SAMPLER, sample an entire mapped pixel or just the weighted center cross
+SAMPLE_FULL_AREA = False
+
+SAMPLER = numpy.mean
 #SAMPLER = numpy.median
-SAMPLER = None
+#SAMPLER = None
 
 # The margin to cut out of the right side of the left sensor's map
-LEFT_OVERLAP_COLUMNS = 0
+LEFT_OVERLAP_COLUMNS = 100
 # The margin to cut out of the left side of the right sensor's map
-RIGHT_OVERLAP_COLUMNS = 0
+RIGHT_OVERLAP_COLUMNS = 100
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map
@@ -131,19 +132,22 @@ class Stitcher(object):
 			spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
 			return (1, spot_depth)
 		
-		spot_col_sample = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
-		spot_row_sample = spot_row_start + int((self.ROW_SCALING_FACTOR+1) / 2)
-
+		spot_samples = []
 		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 		spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
-
-		spot_samples = []
-
-		# sample the center row and center column, double counting the center point
-		for spot_subcol in range(spot_col_start, spot_col_end):
-			spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_row_sample))
-		for spot_subrow in range(spot_row_start, spot_row_end):
-			spot_samples.append(self.getDepthAtVirtualCell(spot_col_sample, spot_subrow))
+		if not SAMPLE_FULL_AREA:
+			# Sample the center row and center column, double counting the center point
+			spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
+			spot_row_center = spot_row_start + int((self.ROW_SCALING_FACTOR+1) / 2)
+			for spot_subcol in range(spot_col_start, spot_col_end):
+				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_row_center))
+			for spot_subrow in range(spot_row_start, spot_row_end):
+				spot_samples.append(self.getDepthAtVirtualCell(spot_col_center, spot_subrow))
+		else:
+			# Sample the full area
+			for spot_subcol in range(spot_col_start, spot_col_end):
+				for spot_subrow in range(spot_row_start, spot_row_end):
+					spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
 		spot_depth = SAMPLER(spot_samples)
 		return (len(spot_samples), spot_depth)
 
