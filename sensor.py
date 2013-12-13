@@ -13,17 +13,17 @@ import plotter
 import threading
 import time
 
-# If using a SAMPLER, sample an entire mapped pixel or just the weighted center cross
+# If using a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
 
-SAMPLER = numpy.mean
-#SAMPLER = numpy.median
-#SAMPLER = None
+SAMPLER = None
+#SAMPLER = numpy.mean
+SAMPLER = numpy.median
 
 # The margin to cut out of the right side of the left sensor's map
-LEFT_OVERLAP_COLUMNS = 100
+LEFT_OVERLAP_COLUMNS = 10
 # The margin to cut out of the left side of the right sensor's map
-RIGHT_OVERLAP_COLUMNS = 100
+RIGHT_OVERLAP_COLUMNS = 10
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map
@@ -39,8 +39,8 @@ STITCHED_COLUMNS = CENTER_SENSOR_EDGE + SENSOR_COLUMNS - RIGHT_OVERLAP_COLUMNS
 STITCHED_ROWS = SENSOR_ROWS
 
 # When simulating Kinect sensor depths, these are the lower and upper bounds for random values
-TEST_CLOSEST_DISTANCE = 50
-TEST_FARTHEST_DISTANCE = 1050
+TEST_CLOSEST_DISTANCE = 100
+TEST_FARTHEST_DISTANCE = 2040
 
 
 def getDummyDepthMap():
@@ -66,7 +66,7 @@ class Stitcher(object):
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
-		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[self._kinect_sensor_left[0]])
+		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[self._kinect_left][0])
 
 		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[self._kinect_center]) ,len(self._depth_maps[self._kinect_center][0])))
 		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
@@ -118,7 +118,8 @@ class Stitcher(object):
 			flipped_col = self.plotter.COLUMNS - 1 - spot_col
 			for spot_row in range(0, self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
-				self.plotter.updateCellState(spot_col, spot_row, spot_depth, now)
+				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
+					self.plotter.updateCellState(spot_col, spot_row, spot_depth, now)
 				
 	def calculateMergedDepth(self, col, row):
 		"Calculate the depth at a plotter map's cell using the specified SAMPLER."
@@ -132,40 +133,35 @@ class Stitcher(object):
 		# whereas this takes .2x seconds per frame.
 		if SAMPLER == None:
 			spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
-			if SPOT_DEPTH == self.MAXIMUM_SENSOR_DEPTH_READING:
+			if spot_depth == self.MAXIMUM_SENSOR_DEPTH_READING:
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 				spot_depth = self.getDepthAtVirtualCell(spot_col_end, spot_row_end)
 			return (1, spot_depth)
 		
 		# Use a sampler
-		spot_samples = []
+		samples_for_cell = []
 		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 		spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 		if not SAMPLE_FULL_AREA:
-			# Sample the center row and center column, double counting the center point
+			# Sample the center column
 			spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
-			spot_row_center = spot_row_start + int((self.ROW_SCALING_FACTOR+1) / 2)
-			for spot_subcol in range(spot_col_start, spot_col_end):
-				sample = self.getDepthAtVirtualCell(spot_subcol, spot_row_center)
-				if sample not = self.MAXIMUM_SENSOR_DEPTH_READING:
-					spot_samples.append(sample)
-			for spot_subrow in range(spot_row_start, spot_row_end):
-				sample = self.getDepthAtVirtualCell(spot_col_center, spot_subrow)
-				if sample not = self.MAXIMUM_SENSOR_DEPTH_READING:
-					spot_samples.append(sample)
+			for spot_row in range(spot_row_start, spot_row_end):
+				sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
+				if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
+					samples_for_cell.append(sample)
 		else:
 			# Sample the full area
 			for spot_subcol in range(spot_col_start, spot_col_end):
 				for spot_subrow in range(spot_row_start, spot_row_end):
 					sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
-					if sample not = self.MAXIMUM_SENSOR_DEPTH_READING:
-						spot_samples.append(sample)
+					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
+						samples_for_cell.append(sample)
 		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
-		if not spot_samples:
-			spot_samples.append(self.MAXIMUM_SENSOR_DEPTH_READING)
-		spot_depth = SAMPLER(spot_samples)
-		return (len(spot_samples), spot_depth)
+		if len(samples_for_cell) == 0:
+			samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
+		spot_depth = SAMPLER(samples_for_cell)
+		return (len(samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):
 		now = time.time()

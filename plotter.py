@@ -9,13 +9,13 @@ import string
 import time
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_THRESHOLD = 80
+FAST_THRESHOLD = 100
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_THRESHOLD = 40
+SLOW_THRESHOLD = 30
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 # How many seconds we leave an object at rest before marking it as REST
-AT_REST_DURATION = 05
+AT_REST_DURATION = 04
 
 # We have 4 columns and 2 rows 
 ZONES=[4,2]
