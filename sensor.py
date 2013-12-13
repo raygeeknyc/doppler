@@ -66,8 +66,10 @@ class Stitcher(object):
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
+		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[self._kinect_sensor_left[0]])
 
 		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[self._kinect_center]) ,len(self._depth_maps[self._kinect_center][0])))
+		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
@@ -101,7 +103,7 @@ class Stitcher(object):
 			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = getDummyDepthMap()
 			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = getDummyDepthMap()
 			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = getDummyDepthMap()
-		logging.info("Generated maps in %f secs" % (time.time() - start))
+		logging.info("Got 3 maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self, now):
 		"""
@@ -125,13 +127,18 @@ class Stitcher(object):
 		spot_col_start = int(col * self.COLUMN_SCALING_FACTOR)
 		spot_row_start = int(row * self.ROW_SCALING_FACTOR)
 
-		# Instead of sampling the area, just return the corner of the virtual cell
+		# Instead of sampling the area, just return one of 2 spots within the cell.
 		# This is done purely for speed, the samplers take 1.x seconds per frame,
 		# whereas this takes .2x seconds per frame.
 		if SAMPLER == None:
 			spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
+			if SPOT_DEPTH == self.MAXIMUM_SENSOR_DEPTH_READING:
+				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
+				spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
+				spot_depth = self.getDepthAtVirtualCell(spot_col_end, spot_row_end)
 			return (1, spot_depth)
 		
+		# Use a sampler
 		spot_samples = []
 		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 		spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
@@ -140,14 +147,23 @@ class Stitcher(object):
 			spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 			spot_row_center = spot_row_start + int((self.ROW_SCALING_FACTOR+1) / 2)
 			for spot_subcol in range(spot_col_start, spot_col_end):
-				spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_row_center))
+				sample = self.getDepthAtVirtualCell(spot_subcol, spot_row_center)
+				if sample not = self.MAXIMUM_SENSOR_DEPTH_READING:
+					spot_samples.append(sample)
 			for spot_subrow in range(spot_row_start, spot_row_end):
-				spot_samples.append(self.getDepthAtVirtualCell(spot_col_center, spot_subrow))
+				sample = self.getDepthAtVirtualCell(spot_col_center, spot_subrow)
+				if sample not = self.MAXIMUM_SENSOR_DEPTH_READING:
+					spot_samples.append(sample)
 		else:
 			# Sample the full area
 			for spot_subcol in range(spot_col_start, spot_col_end):
 				for spot_subrow in range(spot_row_start, spot_row_end):
-					spot_samples.append(self.getDepthAtVirtualCell(spot_subcol, spot_subrow))
+					sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+					if sample not = self.MAXIMUM_SENSOR_DEPTH_READING:
+						spot_samples.append(sample)
+		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
+		if not spot_samples:
+			spot_samples.append(self.MAXIMUM_SENSOR_DEPTH_READING)
 		spot_depth = SAMPLER(spot_samples)
 		return (len(spot_samples), spot_depth)
 
