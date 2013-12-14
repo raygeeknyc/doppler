@@ -36,6 +36,7 @@ class Plotter:
 	
     def updateIdleCells(self, now):
 	"Mark cells which most recently had motion but not recently as REST."
+	# This has been moved into the renderers for reasons of load balancing and performance.
 	idleCellCount = 0
 	activeCellCount = 0
 	expiredCellCount = 0
@@ -332,8 +333,3 @@ def runTests():
 	start = time.time()
 	plotter.testSendUpdates(plotter.COLUMNS-6, 3)
 	logging.info("testSendUpdates took %d" % (time.time() - start))
-	#logging.info("updateIdleCells")
-	#start = time.time()
-	#plotter.updateIdleCells(time.time())
-	#plotter.refreshCells()
-	#logging.info("updateIdle+refresh took %d" % (time.time() - start))

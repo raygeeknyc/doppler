@@ -18,7 +18,7 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
 
-CELL_IDLE_TIME = 30.0  # Set cells to idle after 30.0 secs of inactivity
+CELL_IDLE_TIME = 5.0  # Set cells to idle after 30.0 secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)

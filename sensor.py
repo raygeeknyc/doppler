@@ -191,6 +191,3 @@ while True:
 	now = time.time()
 	stitcher.plotter.refreshCells()
 	logging.info("Refresh took %f secs" % (time.time() - now))
-	now = time.time()
-	stitcher.plotter.updateIdleCells(now)
-	logging.info("Idle took %f secs" % (time.time() - now))
