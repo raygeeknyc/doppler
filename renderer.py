@@ -2,6 +2,7 @@
 
 import logging
 import update_message
+import Queue
 import time
 import threading
 import Tkinter, random
@@ -133,8 +134,8 @@ class App:
         self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
                            height=self._screen_height, cursor="none", background='black')
         self._changedCells = []
-        self._agingCells = []
-        self._idleCells = []
+        self._agingCells = Queue.Queue()
+        self._idleCells = Queue.Queue()
         self.initializeCells()
 	self.setAllCellsRandomly()
 	self.setupPixels()
@@ -208,10 +209,10 @@ class App:
 	while True:
 	 	idleCount = 0
 	 	nonStillCount = 0
-       	 	for agingCell in self._agingCells:
-    			if agingCell.getTimeSinceUpdated() and (agingCell.getTimeSinceUpdated() > CELL_IDLE_TIME):
-             			self._idleCells.append(agingCell)
-				self._agingCells.remove(agingCell)
+       	 	agingCell = self._agingCells.get(True)
+  		if agingCell.getTimeSinceUpdated() < CELL_IDLE_TIME:
+			time.sleep(CELL_IDLE_TIME - agingCell.getTimeSinceUpdated())
+		self._idleCells.put(agingCell)
 
     def setAllCellsRandomly(self):
         logging.debug("Setting all cells to random colors")
@@ -241,14 +242,18 @@ class App:
 	mem = MemUsedMB()
 	start = time.time()
 
-        for cellToRefresh in self._idleCells:
-	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % App._colorForState(update_message.CellState.CHANGE_STILL))
-	    self._idleCells.remove(cellToRefresh)
+	try:
+		idleCell = self._idleCells.get(False)
+        	while True:
+	    		self._canvas.itemconfig(idleCell.getImage(), fill='#%02x%02x%02x' % App._colorForState(update_message.CellState.CHANGE_STILL))
+	    		idleCell = self._idleCells.get(False)
+	except Queue.Empty:
+		pass
         for cellToRefresh in self._changedCells:
 	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % cellToRefresh.getColor())
+	    self._agingCells.put(cellToRefresh)
 	App.redraw_time_consumption_1 = (time.time() - start)
 	App.redraw_mem_consumption_1 = max((MemUsedMB() - mem), App.redraw_mem_consumption_1)
-	self._agingCells += self._changedCells
         self._changedCells = []
         self._canvas.pack()                                                  
 	App.redraw_mem_consumption_2 = max((MemUsedMB() - mem), App.redraw_mem_consumption_2)

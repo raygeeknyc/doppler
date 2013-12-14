@@ -19,7 +19,7 @@ AT_REST_DURATION = 04
 
 # We have 4 columns and 2 rows 
 ZONES=[1,1]
-MAXIMUM_UPDATES_IN_MESSAGE = 3172  # This is to protect the renderers from excessively long update strings
+MAXIMUM_UPDATES_IN_MESSAGE = 1024  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 512
 
 class Plotter:
@@ -277,7 +277,7 @@ class Plotter:
 		self.updateCellState(col, row, 190, now)
 			
 def runTests():
-	logging.getLogger().setLevel(logging.INFO)
+	logging.getLogger().setLevel(logging.DEBUG)
 	plotter = Plotter()
 	logging.info("testSetAllCells")
 	plotter.testSetAllCells()
