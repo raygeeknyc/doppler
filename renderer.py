@@ -133,6 +133,8 @@ class App:
         self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
                            height=self._screen_height, cursor="none", background='black')
         self._changedCells = []
+        self._agingCells = []
+        self._idleCells = []
         self.initializeCells()
 	self.setAllCellsRandomly()
 	self.setupPixels()
@@ -202,22 +204,14 @@ class App:
 	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].getColor()))
 
     def ageIdleCells(self):
-	"""Find all cells which have not had a recent update and mark them as idle."""
-	# this is way too slow, turned off for now
-	idleCount = 0
-	nonStillCount = 0
-        for col in range(0, self._cols):
-          for row in range(0, self._rows):
-	    if self._cells[col][row].getTimeSinceUpdated() and self._cells[col][row].getColor() != App._colorForState(update_message.CellState.CHANGE_STILL) and (self._cells[col][row].getTimeSinceUpdated() > CELL_IDLE_TIME):
-	      #logging.debug("cell %d,%d age is %d" % (col, row, self._cells[col][row].getTimeSinceUpdated()))
-	      nonStillCount += 1
-	    if (self._cells[col][row].getTimeSinceUpdated() and
-	      self._cells[col][row].getColor() != 
-    	      App._colorForState(update_message.CellState.CHANGE_STILL) and
-	      self._cells[col][row].getTimeSinceUpdated() > CELL_IDLE_TIME):
-		cellUpdate = update_message.CellUpdate(update_message.CellState.CHANGE_STILL, (col, row))
-                self.updateCell(cellUpdate)
-	        idleCount += 1
+	"""Find previously updated cells which have been idle and put them on an aged queue."""
+	while True:
+	 	idleCount = 0
+	 	nonStillCount = 0
+       	 	for agingCell in self._agingCells:
+    			if agingCell.getTimeSinceUpdated() and (agingCell.getTimeSinceUpdated() > CELL_IDLE_TIME):
+             			self._idleCells.append(agingCell)
+				self._agingCells.remove(agingCell)
 
     def setAllCellsRandomly(self):
         logging.debug("Setting all cells to random colors")
@@ -241,16 +235,20 @@ class App:
                          ))
 
     def redraw(self):                          
-        """Redraw all updated cells, remove cells from the update list."""
+        """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
 	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
         App.redraw_cycle_timestamp = time.time()
 	mem = MemUsedMB()
 	start = time.time()
 
+        for cellToRefresh in self._idleCells:
+	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % App._colorForState(update_message.CellState.CHANGE_STILL))
+	    self._idleCells.remove(cellToRefresh)
         for cellToRefresh in self._changedCells:
 	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % cellToRefresh.getColor())
 	App.redraw_time_consumption_1 = (time.time() - start)
 	App.redraw_mem_consumption_1 = max((MemUsedMB() - mem), App.redraw_mem_consumption_1)
+	self._agingCells += self._changedCells
         self._changedCells = []
         self._canvas.pack()                                                  
 	App.redraw_mem_consumption_2 = max((MemUsedMB() - mem), App.redraw_mem_consumption_2)
@@ -322,12 +320,16 @@ class App:
 
     def getRequests(self, root):
 	self.getCellUpdates()
-	#self.ageIdleCells()  # way too slow, turn it off for now
 	self.redraw()
 	logging.debug("redraw max mem usage: %f,%f. Total usage: %f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2, MemUsedMB()))
 	logging.debug("redraw cycle: %f" % (App.redraw_cycle_time))
 	logging.debug("redraw time: %f, %f" % (App.redraw_time_consumption_1, App.redraw_time_consumption_2))
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
+
+    def startIdleService(self):
+	self._ageIdleCellsThread = threading.Thread(target=self.ageIdleCells)
+	self._ageIdleCellsThread.daemon = True
+	self._ageIdleCellsThread.start()
 
     def startConfigService(self):
 	self._configThread = threading.Thread(target=self.getConfigRequests)
@@ -368,6 +370,7 @@ signal.signal(signal.SIGINT, quit_handler)
 
 a = App(window_base)  
 window_base.after(0, a.startConfigService())
+window_base.after(0, a.startIdleService())
 window_base.after(0, a.getRequests(window_base))
 try:
 	window_base.mainloop()
