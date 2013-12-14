@@ -298,12 +298,42 @@ def runTests():
 	plotter.testSendUpdates(40,40)
 	plotter.testSendUpdates(70,10)
 	plotter.testSendUpdates(40,35)
-	plotter.testSendUpdates(20,21)
+
+	plotter.testSendUpdates(380,21)
+	plotter.testSendUpdates(380,100)
+
+	plotter.testSendUpdates(250,21)
+	plotter.testSendUpdates(250,100)
+
+	plotter.testSendUpdates(254,21)
+	plotter.testSendUpdates(254,100)
+
+	plotter.testSendUpdates(258,21)
+	plotter.testSendUpdates(258,100)
+
+	plotter.testSendUpdates(260,21)
+	plotter.testSendUpdates(260,100)
+
+	plotter.testSendUpdates(264,21)
+	plotter.testSendUpdates(264,100)
+
+	plotter.testSendUpdates(268,21)
+	plotter.testSendUpdates(268,100)
+
+	plotter.testSendUpdates(270,21)
+	plotter.testSendUpdates(270,100)
+
+	plotter.testSendUpdates(274,21)
+	plotter.testSendUpdates(274,100)
+
+	plotter.testSendUpdates(278,21)
+	plotter.testSendUpdates(278,100)
+
 	start = time.time()
 	plotter.testSendUpdates(plotter.COLUMNS-6, 3)
 	logging.info("testSendUpdates took %d" % (time.time() - start))
-	logging.info("updateIdleCells")
-	start = time.time()
-	plotter.updateIdleCells(time.time())
-	plotter.refreshCells()
-	logging.info("updateIdle+refresh took %d" % (time.time() - start))
+	#logging.info("updateIdleCells")
+	#start = time.time()
+	#plotter.updateIdleCells(time.time())
+	#plotter.refreshCells()
+	#logging.info("updateIdle+refresh took %d" % (time.time() - start))

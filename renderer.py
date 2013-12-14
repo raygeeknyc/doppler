@@ -31,9 +31,9 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 13
-    CELL_HEIGHT = 13
-    CELL_MARGIN = 0
+    CELL_WIDTH = 11
+    CELL_HEIGHT = 11
+    CELL_MARGIN = 3
 
     def __init__(self, left, top):
       self._left = left
@@ -233,7 +233,7 @@ class App:
         for col in range(0, self._cols):
           for row in range(0, self._rows):
 	    cell = self._cells[col][row]
-	    cell.setImage(self._canvas.create_oval(cell.getLeftTop()[0],
+	    cell.setImage(self._canvas.create_rectangle(cell.getLeftTop()[0],
                           cell.getLeftTop()[1],
                           cell.getRightBottom()[0],
                           cell.getRightBottom()[1],

@@ -21,9 +21,9 @@ SAMPLER = None
 SAMPLER = numpy.median
 
 # The margin to cut out of the right side of the left sensor's map
-LEFT_OVERLAP_COLUMNS = 10
+LEFT_OVERLAP_COLUMNS = 0
 # The margin to cut out of the left side of the right sensor's map
-RIGHT_OVERLAP_COLUMNS = 10
+RIGHT_OVERLAP_COLUMNS = 0
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map
@@ -181,7 +181,7 @@ class Stitcher(object):
 
 logging.getLogger().setLevel(logging.INFO)
 logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
-logging.debug("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
+logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 stitcher=Stitcher(0,1,2,0,0,testing=False)
 stitcher.initPlotter()
 while True:
