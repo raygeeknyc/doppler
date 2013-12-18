@@ -1,5 +1,6 @@
 "Install tcl tk python-tkinter python-modules."
 
+import collections
 import logging
 import update_message
 import Queue
@@ -17,7 +18,7 @@ HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
-UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
+UPDATE_DELAY_MS = 01  # refresh 1/1000 sec after events
 
 CELL_IDLE_TIME = 5.0  # Set cells to idle after 30.0 secs of inactivity
 
@@ -49,9 +50,12 @@ class PixelBlock:
     def getImage(self):
       return self._image
 
-    def setColor(self, rgb):
+    def setColor(self, rgb, timestamp=None):
       self._color = tuple(rgb)
-      self._timestamp = time.time()
+      if timestamp == None:
+      	self._timestamp = time.time()
+      else:
+        self._timestamp = timestamp
 
     def getTimeStamp(self):
       return self._timestamp
@@ -104,10 +108,8 @@ CELL_COLORS = {
 
 class App:
 
-    redraw_mem_consumption_1 = 0.0
-    redraw_mem_consumption_2 = 0.0
-    redraw_time_consumption_1 = 0.0
-    redraw_time_consumption_2 = 0.0
+    update_time_consumption = 0.0
+    redraw_time_consumption = 0.0
     redraw_cycle_timestamp = 0.0
     redraw_cycle_time = 0.0
 
@@ -133,8 +135,8 @@ class App:
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
         self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
                            height=self._screen_height, cursor="none", background='black')
-        self._changedCells = []
-        self._agingCells = Queue.Queue()
+        self._changedCells = []  # keep this as a list, 10X+ faster than Queue
+        self._agingCells = collections.deque()
         self._idleCells = Queue.Queue()
         self.initializeCells()
 	self.setAllCellsRandomly()
@@ -181,10 +183,10 @@ class App:
 	except:
 		logging.exception("Error closing config socket")
 
-    def updateCell(self, cellState):
+    def updateCell(self, cellState, cellTimestamp=None):
       """Change the cell described by cellState."""
       try:
-        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state))
+        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state), cellTimestamp)
         self._changedCells.append(self._cells[cellState.x][cellState.y])
       except:
         logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
@@ -206,12 +208,22 @@ class App:
 
     def ageIdleCells(self):
 	"""Find previously updated cells which have been idle and put them on an aged queue."""
+	idled = 0
 	while True:
-	 	idleCount = 0
-	 	nonStillCount = 0
-       	 	agingCell = self._agingCells.get(True)
+		if len(self._agingCells) == 0:
+			logging.debug("Previously idled %d cells" % idled)
+		agingCell = None
+		while agingCell == None:
+			try:
+       	 			agingCell = self._agingCells.popleft()
+			except IndexError:
+				pass
   		if agingCell.getTimeSinceUpdated() < CELL_IDLE_TIME:
+			logging.debug("Fetched non-expired update. Waiting for %f" % (CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()))
+			idled = 0
 			time.sleep(CELL_IDLE_TIME - agingCell.getTimeSinceUpdated())
+			logging.debug("woke at %f" % time.time())
+		idled += 1
 		self._idleCells.put(agingCell)
 
     def setAllCellsRandomly(self):
@@ -239,8 +251,6 @@ class App:
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
 	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
         App.redraw_cycle_timestamp = time.time()
-	mem = MemUsedMB()
-	start = time.time()
 
 	try:
 		idleCell = self._idleCells.get(False)
@@ -249,15 +259,13 @@ class App:
 	    		idleCell = self._idleCells.get(False)
 	except Queue.Empty:
 		pass
+	start = time.time()
         for cellToRefresh in self._changedCells:
 	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % cellToRefresh.getColor())
-	    self._agingCells.put(cellToRefresh)
-	App.redraw_time_consumption_1 = (time.time() - start)
-	App.redraw_mem_consumption_1 = max((MemUsedMB() - mem), App.redraw_mem_consumption_1)
+	    self._agingCells.append(cellToRefresh)
+	App.redraw_time_consumption = (time.time() - start)
         self._changedCells = []
         self._canvas.pack()                                                  
-	App.redraw_mem_consumption_2 = max((MemUsedMB() - mem), App.redraw_mem_consumption_2)
-	App.redraw_time_consumption_2 = (time.time() - start)
                           
     def _sendRendererConfig(self):
 	"Send our client the number of cols and rows we render."
@@ -309,26 +317,29 @@ class App:
 			self._configAddr = None
 
     def getCellUpdates(self):
+	start = time.time()
+	updateData = None
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
 		logging.debug("Received update of %d length" % len(updateData))
 	except:
 		#TODO: distinguish between resource not available and "real" errors
-		updateData = None
 		pass
 
 	if updateData:
+		cellUpdateTime = time.time()
 		cellUpdates = [self.expandCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
 		for expandedCellUpdate in cellUpdates:
 		  for cellUpdate in expandedCellUpdate:
-		    self.updateCell(cellUpdate)
+		    self.updateCell(cellUpdate, cellUpdateTime)
+	App.update_time_consumption = (time.time() - start)
 
     def getRequests(self, root):
 	self.getCellUpdates()
 	self.redraw()
-	logging.debug("redraw max mem usage: %f,%f. Total usage: %f" % (App.redraw_mem_consumption_1, App.redraw_mem_consumption_2, MemUsedMB()))
-	logging.debug("redraw cycle: %f" % (App.redraw_cycle_time))
-	logging.debug("redraw time: %f, %f" % (App.redraw_time_consumption_1, App.redraw_time_consumption_2))
+	logging.debug("update time: %f" % App.update_time_consumption)
+	logging.debug("redraw frequency: %f" % App.redraw_cycle_time)
+	logging.debug("redraw time: %f" % App.redraw_time_consumption)
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
     def startIdleService(self):
@@ -365,7 +376,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 window_base = Tkinter.Tk()
 def quit_handler(signal, frame):
 	logging.debug("Interrupted")
