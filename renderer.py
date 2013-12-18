@@ -19,7 +19,7 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 UPDATE_DELAY_MS = 01  # refresh 1/1000 sec after events
 
-CELL_IDLE_TIME = 5.0  # Set cells to idle after 30.0 secs of inactivity
+CELL_IDLE_TIME = 5.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -182,10 +182,10 @@ class App:
 	except:
 		logging.exception("Error closing config socket")
 
-    def updateCell(self, cellState, cellTimestamp=None):
+    def updateCell(self, cellState, timestamp=None):
       """Change the cell described by cellState."""
       try:
-        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state), cellTimestamp)
+        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state), timestamp)
         self._changedCells.append(self._cells[cellState.x][cellState.y])
       except:
         logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
@@ -217,10 +217,11 @@ class App:
        	 			agingCell = self._agingCells.popleft()
 			except IndexError:
 				pass
-  		if agingCell.getTimeSinceUpdated() < CELL_IDLE_TIME:
-			logging.debug("Fetched non-expired update. Waiting for %f" % (CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()))
+		remainingIdleTime = CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()
+  		if remainingIdleTime > .001:  # We do not care below MS
+			logging.debug("Fetched non-expired update. Waiting for %f" % remainingIdleTime)
 			idled = 0
-			time.sleep(CELL_IDLE_TIME - agingCell.getTimeSinceUpdated())
+			time.sleep(remainingIdleTime)
 			logging.debug("woke at %f" % time.time())
 		idled += 1
 		self._idleCells.append(agingCell)
@@ -255,7 +256,7 @@ class App:
 		idleCell = self._idleCells.popleft()
         	while True:
 	    		self._canvas.itemconfig(idleCell.getImage(), fill='#%02x%02x%02x' % App._colorForState(update_message.CellState.CHANGE_STILL))
-	    		idleCell = self._idleCells.popleft(False)
+	    		idleCell = self._idleCells.popleft()
 	except IndexError:
 		pass
 	start = time.time()
@@ -336,9 +337,9 @@ class App:
     def getRequests(self, root):
 	self.getCellUpdates()
 	self.redraw()
-	logging.debug("update time: %f" % App.update_time_consumption)
-	logging.debug("redraw frequency: %f" % App.redraw_cycle_time)
-	logging.debug("redraw time: %f" % App.redraw_time_consumption)
+	logging.info("update time: %f" % App.update_time_consumption)
+	logging.info("redraw frequency: %f" % App.redraw_cycle_time)
+	logging.info("redraw time: %f" % App.redraw_time_consumption)
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
     def startIdleService(self):
@@ -375,7 +376,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 window_base = Tkinter.Tk()
 def quit_handler(signal, frame):
 	logging.debug("Interrupted")
