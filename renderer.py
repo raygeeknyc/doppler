@@ -3,7 +3,6 @@
 import collections
 import logging
 import update_message
-import Queue
 import time
 import threading
 import Tkinter, random
@@ -137,7 +136,7 @@ class App:
                            height=self._screen_height, cursor="none", background='black')
         self._changedCells = []  # keep this as a list, 10X+ faster than Queue
         self._agingCells = collections.deque()
-        self._idleCells = Queue.Queue()
+        self._idleCells = collections.deque()
         self.initializeCells()
 	self.setAllCellsRandomly()
 	self.setupPixels()
@@ -224,7 +223,7 @@ class App:
 			time.sleep(CELL_IDLE_TIME - agingCell.getTimeSinceUpdated())
 			logging.debug("woke at %f" % time.time())
 		idled += 1
-		self._idleCells.put(agingCell)
+		self._idleCells.append(agingCell)
 
     def setAllCellsRandomly(self):
         logging.debug("Setting all cells to random colors")
@@ -253,11 +252,11 @@ class App:
         App.redraw_cycle_timestamp = time.time()
 
 	try:
-		idleCell = self._idleCells.get(False)
+		idleCell = self._idleCells.popleft()
         	while True:
 	    		self._canvas.itemconfig(idleCell.getImage(), fill='#%02x%02x%02x' % App._colorForState(update_message.CellState.CHANGE_STILL))
-	    		idleCell = self._idleCells.get(False)
-	except Queue.Empty:
+	    		idleCell = self._idleCells.popleft(False)
+	except IndexError:
 		pass
 	start = time.time()
         for cellToRefresh in self._changedCells:
