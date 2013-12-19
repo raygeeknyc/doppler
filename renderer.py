@@ -17,6 +17,7 @@ HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
+MIN_IDLE_UPDATE_FREQ = 1.0  # Only check for idle updates this frequently
 UPDATE_DELAY_MS = 01  # refresh 1/1000 sec after events
 
 CELL_IDLE_TIME = 5.0  # Set cells to idle after this many secs of inactivity
@@ -39,29 +40,20 @@ class PixelBlock:
     def __init__(self, left, top):
       self._left = left
       self._top = top
-      self._timestamp = None
+      self.timestamp = None
       self.setColor((0,0,0))
-      self._image = None
-
-    def setImage(self, shape):
-      self._image = shape
-
-    def getImage(self):
-      return self._image
+      self.image = None
 
     def setColor(self, rgb, timestamp=None):
       self._color = tuple(rgb)
       if timestamp == None:
-      	self._timestamp = time.time()
+      	self.timestamp = time.time()
       else:
-        self._timestamp = timestamp
-
-    def getTimeStamp(self):
-      return self._timestamp
+        self.timestamp = timestamp
 
     def getTimeSinceUpdated(self):
-      if self._timestamp:
-          return time.time() - self._timestamp
+      if self.timestamp:
+          return time.time() - self.timestamp
       else:
           return None
 
@@ -108,6 +100,7 @@ CELL_COLORS = {
 class App:
 
     update_time_consumption = 0.0
+    idle_time_consumption = 0.0
     redraw_time_consumption = 0.0
     redraw_cycle_timestamp = 0.0
     redraw_cycle_time = 0.0
@@ -209,17 +202,13 @@ class App:
 	"""Find previously updated cells which have been idle and put them on an aged queue."""
 	idled = 0
 	while True:
-		if len(self._agingCells) == 0:
-			logging.debug("Previously idled %d cells" % idled)
-		agingCell = None
-		while agingCell == None:
-			try:
-       	 			agingCell = self._agingCells.popleft()
-			except IndexError:
-				pass
-		remainingIdleTime = CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()
-  		if remainingIdleTime > .001:  # We do not care below MS
-			logging.debug("Fetched non-expired update. Waiting for %f" % remainingIdleTime)
+		while len(self._agingCells) == 0:
+			logging.info("Previously idled %d cells" % idled)
+			time.sleep(MIN_IDLE_UPDATE_FREQ)
+     	 	agingCell = self._agingCells.popleft()
+		remainingIdleTime =  CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()
+  		if remainingIdleTime > MIN_IDLE_UPDATE_FREQ:
+			logging.info("Fetched non-expired update. waiting for %f" % remainingIdleTime)
 			idled = 0
 			time.sleep(remainingIdleTime)
 			logging.debug("woke at %f" % time.time())
@@ -240,28 +229,31 @@ class App:
         for col in range(0, self._cols):
           for row in range(0, self._rows):
 	    cell = self._cells[col][row]
-	    cell.setImage(self._canvas.create_rectangle(cell.getLeftTop()[0],
+	    cell.image = self._canvas.create_rectangle(cell.getLeftTop()[0],
                           cell.getLeftTop()[1],
                           cell.getRightBottom()[0],
                           cell.getRightBottom()[1],
                           fill='#%02x%02x%02x' % cell.getColor()
-                         ))
+                         )
 
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
 	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
         App.redraw_cycle_timestamp = time.time()
 
+	start = time.time()
 	try:
 		idleCell = self._idleCells.popleft()
+		stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
         	while True:
-	    		self._canvas.itemconfig(idleCell.getImage(), fill='#%02x%02x%02x' % App._colorForState(update_message.CellState.CHANGE_STILL))
+	    		self._canvas.itemconfig(idleCell.image, fill='#%02x%02x%02x' % stillColor)
 	    		idleCell = self._idleCells.popleft()
 	except IndexError:
 		pass
+	App.idle_time_consumption = (time.time() - start)
 	start = time.time()
         for cellToRefresh in self._changedCells:
-	    self._canvas.itemconfig(cellToRefresh.getImage(), fill='#%02x%02x%02x' % cellToRefresh.getColor())
+	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.getColor())
 	    self._agingCells.append(cellToRefresh)
 	App.redraw_time_consumption = (time.time() - start)
         self._changedCells = []
@@ -340,6 +332,7 @@ class App:
 	logging.info("update time: %f" % App.update_time_consumption)
 	logging.info("redraw frequency: %f" % App.redraw_cycle_time)
 	logging.info("redraw time: %f" % App.redraw_time_consumption)
+	logging.info("idle time: %f" % App.idle_time_consumption)
 	root.after(UPDATE_DELAY_MS,self.getRequests,root)
 
     def startIdleService(self):
