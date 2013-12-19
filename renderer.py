@@ -203,12 +203,12 @@ class App:
 	idled = 0
 	while True:
 		while len(self._agingCells) == 0:
-			logging.info("Previously idled %d cells" % idled)
 			time.sleep(MIN_IDLE_UPDATE_FREQ)
      	 	agingCell = self._agingCells.popleft()
 		remainingIdleTime =  CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()
   		if remainingIdleTime > MIN_IDLE_UPDATE_FREQ:
 			logging.info("Fetched non-expired update. waiting for %f" % remainingIdleTime)
+			logging.info("Previously idled %d cells" % idled)
 			idled = 0
 			time.sleep(remainingIdleTime)
 			logging.debug("woke at %f" % time.time())
@@ -242,15 +242,15 @@ class App:
         App.redraw_cycle_timestamp = time.time()
 
 	start = time.time()
-	try:
+	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
+	idled = 0
+	while len(self._idleCells > 0):
 		idleCell = self._idleCells.popleft()
-		stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-        	while True:
-	    		self._canvas.itemconfig(idleCell.image, fill='#%02x%02x%02x' % stillColor)
-	    		idleCell = self._idleCells.popleft()
-	except IndexError:
-		pass
+		idled += 1
+	    	self._canvas.itemconfig(idleCell.image, fill='#%02x%02x%02x' % stillColor)
+	logging.debug("Marked %d idle cells" % idled)
 	App.idle_time_consumption = (time.time() - start)
+
 	start = time.time()
         for cellToRefresh in self._changedCells:
 	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.getColor())
