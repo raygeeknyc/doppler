@@ -340,7 +340,7 @@ class App:
     def parseCellUpdateMessage(self, cellUpdateMessage):
 	try:
 		cellState = None
-		(state,x,y) = cellUpdateMessage.split(",")
+		(state,col,row) = cellUpdateMessage.split(",")
 		return update_message.CellUpdate.fromText(state+","+str(col)+","+str(row))
 	except:
 		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
