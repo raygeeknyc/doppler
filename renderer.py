@@ -18,9 +18,9 @@ MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 MIN_IDLE_UPDATE_FREQ = 1.0  # Only check for idle updates this frequently
-UPDATE_DELAY_MS = 01  # refresh 1/1000 sec after events
+UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
 
-CELL_IDLE_TIME = 5.0  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -35,7 +35,7 @@ class updateListener:
 class PixelBlock:
     CELL_WIDTH = 11
     CELL_HEIGHT = 11
-    CELL_MARGIN = 3
+    CELL_MARGIN = 03
 
     def __init__(self, left, top):
       self._left = left
@@ -127,7 +127,8 @@ class App:
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
         self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
                            height=self._screen_height, cursor="none", background='black')
-        self._changedCells = []  # keep this as a list, 10X+ faster than Queue
+        self._canvas.pack()                                                  
+        self._changedCells = collections.deque()
         self._agingCells = collections.deque()
         self._idleCells = collections.deque()
         self.initializeCells()
@@ -206,7 +207,7 @@ class App:
      	 	agingCell = self._agingCells.popleft()
 		remainingIdleTime =  CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()
   		if remainingIdleTime > MIN_IDLE_UPDATE_FREQ:
-			logging.info("Fetched non-expired update. waiting for %f" % remainingIdleTime)
+			logging.debug("Fetched non-expired update. waiting for %f" % remainingIdleTime)
 			time.sleep(remainingIdleTime)
 			logging.debug("woke at %f" % time.time())
 		self._idleCells.append(agingCell)
@@ -245,12 +246,11 @@ class App:
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
-        for cellToRefresh in self._changedCells:
+	while len(self._changedCells) > 0:
+            cellToRefresh = self._changedCells.popleft()
 	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.color)
 	    self._agingCells.append(cellToRefresh)
 	App.redraw_time_consumption = (time.time() - start)
-        self._changedCells = []
-        self._canvas.pack()                                                  
                           
     def _sendRendererConfig(self):
 	"Send our client the number of cols and rows we render."
@@ -302,30 +302,29 @@ class App:
 			self._configAddr = None
 
     def getCellUpdates(self):
-	start = time.time()
-	updateData = None
-	try:
-		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
-		logging.debug("Received update of %d length" % len(updateData))
-	except:
-		#TODO: distinguish between resource not available and "real" errors
-		pass
+	while True:
+		start = time.time()
+		updateData = None
+		try:
+			updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+			logging.debug("Received update of %d length" % len(updateData))
+		except:
+			#TODO: distinguish between resource not available and "real" errors
+			pass
+		if updateData:
+			cellUpdateTime = time.time()
+			cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+			for cellUpdate in cellUpdates:
+			    self.updateCell(cellUpdate, cellUpdateTime)
+		App.update_time_consumption = (time.time() - start)
 
-	if updateData:
-		cellUpdateTime = time.time()
-		cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
-		for cellUpdate in cellUpdates:
-		    self.updateCell(cellUpdate, cellUpdateTime)
-	App.update_time_consumption = (time.time() - start)
-
-    def getRequests(self, root):
-	self.getCellUpdates()
+    def refresh(self, root):
 	self.redraw()
-	logging.info("update time: %f" % App.update_time_consumption)
-	logging.info("redraw frequency: %f" % App.redraw_cycle_time)
-	logging.info("redraw time: %f" % App.redraw_time_consumption)
-	logging.info("idle time: %f" % App.idle_time_consumption)
-	root.after(UPDATE_DELAY_MS,self.getRequests,root)
+	logging.debug("update time: %f" % App.update_time_consumption)
+	logging.debug("redraw frequency: %f" % App.redraw_cycle_time)
+	logging.debug("redraw time: %f" % App.redraw_time_consumption)
+	logging.debug("idle time: %f" % App.idle_time_consumption)
+	root.after(UPDATE_DELAY_MS,self.refresh,root)
 
     def startIdleService(self):
 	self._ageIdleCellsThread = threading.Thread(target=self.ageIdleCells)
@@ -336,6 +335,11 @@ class App:
 	self._configThread = threading.Thread(target=self.getConfigRequests)
 	self._configThread.daemon = True
 	self._configThread.start()
+
+    def startRequestService(self):
+	self._updateThread = threading.Thread(target=self.getCellUpdates)
+	self._updateThread.daemon = True
+	self._updateThread.start()
 
     def parseCellUpdateMessage(self, cellUpdateMessage):
 	try:
@@ -373,19 +377,24 @@ class App:
 
 logging.getLogger().setLevel(logging.INFO)
 window_base = Tkinter.Tk()
+
 def quit_handler(signal, frame):
-	logging.debug("Interrupted")
+	logging.info("Interrupted")
 	window_base.quit()
 
 signal.signal(signal.SIGINT, quit_handler)
 
+logging.info("creating window %f" % time.time())
 a = App(window_base)  
-window_base.after(0, a.startConfigService())
-window_base.after(0, a.startIdleService())
-window_base.after(0, a.getRequests(window_base))
+logging.info("Starting threads %f" % time.time())
+a.startConfigService()
+a.startIdleService()
+a.startRequestService()
+logging.info("Scheduling refresh %f" % time.time())
+window_base.after(0, a.refresh(window_base))
 try:
 	window_base.mainloop()
-	logging.debug("Ending")
+	logging.info("Ending")
 except Exception as e:
 	logging.exception("Top level exception")
 a.finish()
