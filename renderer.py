@@ -313,9 +313,8 @@ class App:
 
 	if updateData:
 		cellUpdateTime = time.time()
-		cellUpdates = [self.expandCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
-		for expandedCellUpdate in cellUpdates:
-		  for cellUpdate in expandedCellUpdate:
+		cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+		for cellUpdate in cellUpdates:
 		    self.updateCell(cellUpdate, cellUpdateTime)
 	App.update_time_consumption = (time.time() - start)
 
@@ -338,7 +337,17 @@ class App:
 	self._configThread.daemon = True
 	self._configThread.start()
 
+    def parseCellUpdateMessage(self, cellUpdateMessage):
+	try:
+		cellState = None
+		(state,x,y) = cellUpdateMessage.split(",")
+		return update_message.CellUpdate.fromText(state+","+str(col)+","+str(row))
+	except:
+		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
+		return None  # drop this update
+
     def expandCellUpdateMessage(self, cellUpdateMessage):
+	# Not currently used by the plotter and expensive. See parseCellUpdate
 	try:
 		affectedCellStates = []
 		(state,x,y) = cellUpdateMessage.split(",")
