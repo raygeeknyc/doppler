@@ -88,9 +88,6 @@ class Plotter:
 	first_renderer = self._getRendererAddress(zone[0], zone[1])
 	logging.debug("Getting renderer config from %s" % first_renderer)
 	first_renderer = self._configConnection(first_renderer)
-	logging.debug("Sending config request to renderer %s" % str(first_renderer))
-	first_renderer.send(update_message.SEND_CONFIG_COMMAND)
-	logging.debug("sent config request")
 	config = ""
 	buffer = ""
 	waiting = True
