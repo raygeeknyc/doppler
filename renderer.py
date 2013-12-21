@@ -129,7 +129,7 @@ class App:
                            height=self._screen_height, cursor="none", background='black')
         self._canvas.pack()                                                  
 	self._cellUpdates = collections.deque()
-        self._agingCells = []
+        self._agingUpdates = []
         self._changedCells = []
         self.initializeCells()
 	self.setAllCellsRandomly()
@@ -199,28 +199,18 @@ class App:
 	    if self._cells[col][row].color != App._colorForState(update_message.CellState.CHANGE_STILL):
 	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].color))
 
-    def ageIdleCells(self):
-	"""Find previously updated cells which have been idle and put them on an aged queue."""
-	while True:
-		while len(self._agingCells) == 0:
-			time.sleep(MIN_IDLE_UPDATE_FREQ)
-     	 	agingCell = self._agingCells.popleft()
-		remainingIdleTime =  CELL_IDLE_TIME - agingCell.getTimeSinceUpdated()
-  		if remainingIdleTime > MIN_IDLE_UPDATE_FREQ:
-			logging.debug("Fetched non-expired update. waiting for %f" % remainingIdleTime)
-			time.sleep(remainingIdleTime)
-			logging.debug("woke at %f" % time.time())
-		self._idleCells.append(agingCell)
-
     def setAllCellsRandomly(self):
         logging.debug("Setting all cells to random colors")
+	updateData = ""
 
         for col in range(0, self._cols):
           for row in range(0, self._rows):
-            cellState = update_message.CellUpdate.fromText(
-              update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)]+
-              ","+str(col)+","+str(row))
-            self.updateCell(cellState)
+	      updateData += (update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)]+
+                ","+str(col)+","+str(row)+"|")
+	updateData = updateData[:-1]
+	cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+	logging.debug("Generated %d cell updates: '%s'" % (len(cellUpdates), cellUpdates))
+        self._cellUpdates.append(cellUpdates)
   
     def setupPixels(self):
         for col in range(0, self._cols):
@@ -240,14 +230,14 @@ class App:
 
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-	logging.info("%d agingCells" % len(self._agingCells))
-	while len(self._agingCells) > 0:
-		logging.info("%Parsed at %f" % self._agingCells[0][0])
-		idleCells = self._agingCells.pop(0)[1]
-		logging.info("Found %d idle cells" % len(idleCells))
+	logging.debug("%d batches of agingCells" % len(self._agingUpdates))
+	while len(self._agingUpdates) > 0 and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
+		logging.debug("Parsed at %f" % self._agingUpdates[0][0])
+		idleUpdates = self._agingUpdates.pop(0)[1]
+		logging.debug("Found %d idle updates" % len(idleUpdates))
 
-		for idleCell in idleCells:
-	    		self._canvas.itemconfig(idleCell.image, fill='#%02x%02x%02x' % stillColor)
+		for idleUpdate in idleUpdates:
+	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, fill='#%02x%02x%02x' % stillColor)
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
@@ -322,12 +312,11 @@ class App:
     def updateCells(self):
 	now = time.time()
 	while len(self._cellUpdates) > 0:
-		logging.info("Updating cells")
 		updates = self._cellUpdates.popleft()
+		logging.debug("got %d cells to update" % len(updates))
 		for cellUpdate in updates:
-			updateCell(cellUpdate, now)
-		logging.info("Aging %d cells" % len(updates))
-		self._agingCells.append((now, updates))
+			self.updateCell(cellUpdate, now)
+		self._agingUpdates.append((time.time(), updates))
 
     def refresh(self, root):
 	self.updateCells()
