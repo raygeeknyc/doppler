@@ -128,9 +128,9 @@ class App:
         self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
                            height=self._screen_height, cursor="none", background='black')
         self._canvas.pack()                                                  
-        self._changedCells = collections.deque()
-        self._agingCells = collections.deque()
-        self._idleCells = collections.deque()
+	self._cellUpdates = collections.deque()
+        self._agingCells = []
+        self._changedCells = []
         self.initializeCells()
 	self.setAllCellsRandomly()
 	self.setupPixels()
@@ -240,16 +240,20 @@ class App:
 
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-	while len(self._idleCells) > 0:
-		idleCell = self._idleCells.popleft()
-	    	self._canvas.itemconfig(idleCell.image, fill='#%02x%02x%02x' % stillColor)
+	logging.info("%d agingCells" % len(self._agingCells))
+	while len(self._agingCells) > 0:
+		logging.info("%Parsed at %f" % self._agingCells[0][0])
+		idleCells = self._agingCells.pop(0)[1]
+		logging.info("Found %d idle cells" % len(idleCells))
+
+		for idleCell in idleCells:
+	    		self._canvas.itemconfig(idleCell.image, fill='#%02x%02x%02x' % stillColor)
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
-	while len(self._changedCells) > 0:
-            cellToRefresh = self._changedCells.popleft()
+	for cellToRefresh in self._changedCells:
 	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.color)
-	    self._agingCells.append(cellToRefresh)
+	self._changedCells = []
 	App.redraw_time_consumption = (time.time() - start)
                           
     def _sendRendererConfig(self):
@@ -312,24 +316,27 @@ class App:
 			#TODO: distinguish between resource not available and "real" errors
 			pass
 		if updateData:
-			cellUpdateTime = time.time()
-			cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
-			for cellUpdate in cellUpdates:
-			    self.updateCell(cellUpdate, cellUpdateTime)
+			self._cellUpdates.append([self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")])
 		App.update_time_consumption = (time.time() - start)
 
+    def updateCells(self):
+	now = time.time()
+	while len(self._cellUpdates) > 0:
+		logging.info("Updating cells")
+		updates = self._cellUpdates.popleft()
+		for cellUpdate in updates:
+			updateCell(cellUpdate, now)
+		logging.info("Aging %d cells" % len(updates))
+		self._agingCells.append((now, updates))
+
     def refresh(self, root):
+	self.updateCells()
 	self.redraw()
 	logging.debug("update time: %f" % App.update_time_consumption)
 	logging.debug("redraw frequency: %f" % App.redraw_cycle_time)
 	logging.debug("redraw time: %f" % App.redraw_time_consumption)
 	logging.debug("idle time: %f" % App.idle_time_consumption)
 	root.after(UPDATE_DELAY_MS,self.refresh,root)
-
-    def startIdleService(self):
-	self._ageIdleCellsThread = threading.Thread(target=self.ageIdleCells)
-	self._ageIdleCellsThread.daemon = True
-	self._ageIdleCellsThread.start()
 
     def startConfigService(self):
 	self._configThread = threading.Thread(target=self.getConfigRequests)
@@ -375,7 +382,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 window_base = Tkinter.Tk()
 
 def quit_handler(signal, frame):
@@ -388,7 +395,6 @@ logging.info("creating window %f" % time.time())
 a = App(window_base)  
 logging.info("Starting threads %f" % time.time())
 a.startConfigService()
-a.startIdleService()
 a.startRequestService()
 logging.info("Scheduling refresh %f" % time.time())
 window_base.after(0, a.refresh(window_base))

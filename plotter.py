@@ -18,7 +18,7 @@ DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 AT_REST_DURATION = 04
 
 # We have 4 columns and 2 rows 
-ZONES=[4,2]
+ZONES=[1,1]
 MAXIMUM_UPDATES_IN_MESSAGE = 1024  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 512
 

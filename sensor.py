@@ -182,7 +182,7 @@ class Stitcher(object):
 logging.getLogger().setLevel(logging.INFO)
 logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
-stitcher=Stitcher(0,1,2,0,0,testing=False)
+stitcher=Stitcher(0,1,2,0,0,testing=True)
 stitcher.initPlotter()
 while True:
 	start = time.time()
