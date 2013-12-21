@@ -40,22 +40,11 @@ class PixelBlock:
     def __init__(self, left, top):
       self._left = left
       self._top = top
-      self.timestamp = None
       self.color = _NEUTRAL_COLOR
       self.image = None
 
-    def setColor(self, rgb, timestamp=None):
+    def setColor(self, rgb):
       self.color = tuple(rgb)
-      if timestamp == None:
-      	self.timestamp = time.time()
-      else:
-        self.timestamp = timestamp
-
-    def getTimeSinceUpdated(self):
-      if self.timestamp:
-          return time.time() - self.timestamp
-      else:
-          return None
 
     def getColor(self):
       return self.color
@@ -176,10 +165,10 @@ class App:
 	except:
 		logging.exception("Error closing config socket")
 
-    def updateCell(self, cellState, timestamp=None):
+    def updateCell(self, cellState):
       """Change the cell described by cellState."""
       try:
-        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state), timestamp)
+        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state))
         self._changedCells.append(self._cells[cellState.x][cellState.y])
       except:
         logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
@@ -230,11 +219,11 @@ class App:
 
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-	logging.debug("%d batches of agingCells" % len(self._agingUpdates))
+	logging.debug("%d pending batches of agingCells" % len(self._agingUpdates))
 	while len(self._agingUpdates) > 0 and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
-		logging.debug("Parsed at %f" % self._agingUpdates[0][0])
+		logging.debug("Aged cells parsed at %f" % self._agingUpdates[0][0])
 		idleUpdates = self._agingUpdates.pop(0)[1]
-		logging.debug("Found %d idle updates" % len(idleUpdates))
+		logging.debug("%d aged updates" % len(idleUpdates))
 
 		for idleUpdate in idleUpdates:
 	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, fill='#%02x%02x%02x' % stillColor)
@@ -315,7 +304,7 @@ class App:
 		updates = self._cellUpdates.popleft()
 		logging.debug("got %d cells to update" % len(updates))
 		for cellUpdate in updates:
-			self.updateCell(cellUpdate, now)
+			self.updateCell(cellUpdate)
 		self._agingUpdates.append((time.time(), updates))
 
     def refresh(self, root):
@@ -371,7 +360,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 window_base = Tkinter.Tk()
 
 def quit_handler(signal, frame):
