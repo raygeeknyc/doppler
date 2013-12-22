@@ -48,8 +48,6 @@ class Plotter:
 	return ((int(globalCoordinate[0] / self.PER_ZONE_CELL_DIMENSIONS[0]), int(globalCoordinate[1] / self.PER_ZONE_CELL_DIMENSIONS[1])), (globalCoordinate[0] % self.PER_ZONE_CELL_DIMENSIONS[0], globalCoordinate[1] % self.PER_ZONE_CELL_DIMENSIONS[1]))
 
     def __init__(self):
-	self._timeConnecting = 0
-
 	self._timeSending = 0
         self._changedCells = []
 	self._cells = None
@@ -126,7 +124,6 @@ class Plotter:
 	  			currentZoneUpdates.append(remoteCellUpdate)
 				self._cells[col][row][2] = False
 	self._sendUpdatesForZone(currentZone, currentZoneUpdates)
-	logging.debug("Time connecting %d" % self._timeConnecting)
 	logging.debug("Time sending %d" % self._timeSending)
 	
     def sendTestUpdates(self, localCellStates):
