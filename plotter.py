@@ -63,9 +63,11 @@ class Plotter:
 	self._updateSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def _getRendererConfig(self, zone):
-	first_renderer = self._getRendererAddress(zone[0], zone[1])
-	logging.debug("Getting renderer config from %s" % first_renderer)
-	first_renderer = self._configConnection(first_renderer)
+	first_renderer_addr = self._getRendererAddress(zone[0], zone[1])
+	logging.debug("Getting renderer config from %s" % first_renderer_addr)
+	first_renderer = self._configConnection(first_renderer_addr)
+	if not first_renderer:
+		raise Exception("No renderer found at %s" % first_renderer_addr)
 	config = ""
 	buffer = ""
 	waiting = True
@@ -181,21 +183,23 @@ class Plotter:
 
     def _configConnection(self, address):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.setblocking(0)
+	s.setblocking(1)
 	tries = 0
 	while tries < update_message.MAXIMUM_RENDERER_CONNECT_RETRIES:
 		tries += 1
 		try:
 			logging.debug("Attempt #%d to connect to %s:%d" % (tries, address, update_message.RENDERER_PORT))
 			s.connect((address, update_message.RENDERER_PORT))
+			logging.debug("connected")
 			return s
 		except Exception as e:
 			if e.errno == errno.EINPROGRESS or e.errno ==  errno.EALREADY:
 		  		_, writeables, in_error = select.select([], [s], [s], update_message.RENDERER_CONNECT_TIMEOUT_SECS) 
 		  		if s not in writeables or s in in_error:
 		    			logging.error("Socket for %s in error or not writeable" % address)
+					return None
 				else:
-					return s
+		    			logging.error("Socket for %s error '%s'" % (s, e))
 	logging.error("Failed to connect to %s:%d" % (address, update_message.RENDERER_PORT))
 	return None
 	
@@ -237,19 +241,18 @@ class Plotter:
     	self.initAllCellsStates(allCellDistances)
 
     def testUpdateCellStates(self, baseCol, baseRow):
-	now = time.time()
 	col = baseCol
 	for row in range(baseRow, baseRow+10):
-		self.updateCellState(col, row, 10, now)
+		self.updateCellState(col, row, 10)
 	col += 1
 	for row in range(baseRow, baseRow+10):
-		self.updateCellState(col, row, 90, now)
+		self.updateCellState(col, row, 90)
 	col += 1
 	for row in range(baseRow, baseRow+10):
-		self.updateCellState(col, row, 110, now)
+		self.updateCellState(col, row, 110)
 	col += 1
 	for row in range(baseRow, baseRow+10):
-		self.updateCellState(col, row, 190, now)
+		self.updateCellState(col, row, 190)
 			
 def runTests():
 	logging.getLogger().setLevel(logging.DEBUG)
