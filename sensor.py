@@ -105,7 +105,7 @@ class Stitcher(object):
 			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = getDummyDepthMap()
 		logging.info("Got 3 maps in %f secs" % (time.time() - start))
 
-	def plotMappedDepths(self, now):
+	def plotMappedDepths(self):
 		"""
 		Send updates to the plotters depth map, from the stitched sensor maps,
 		using the min of sensor cells that correspond to each plotter cell.
@@ -114,12 +114,13 @@ class Stitcher(object):
 		within a cell's sensor cells should not matter.
 		"""
 		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
+		COL_LIMIT = self.plotter.COLUMNS - 1
 		for spot_col in range(0, self.plotter.COLUMNS):
-			flipped_col = self.plotter.COLUMNS - 1 - spot_col
+			flipped_col = COL_LIMIT - spot_col
 			for spot_row in range(0, self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
-					self.plotter.updateCellState(spot_col, spot_row, spot_depth, now)
+					self.plotter.updateCellState(spot_col, spot_row, spot_depth)
 				
 	def calculateMergedDepth(self, col, row):
 		"Calculate the depth at a plotter map's cell using the specified SAMPLER."
@@ -138,35 +139,34 @@ class Stitcher(object):
 				spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 				spot_depth = self.getDepthAtVirtualCell(spot_col_end, spot_row_end)
 			return (1, spot_depth)
-		
-		# Use a sampler
-		samples_for_cell = []
-		spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
-		spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
-		if not SAMPLE_FULL_AREA:
-			# Sample the center column
-			spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
-			for spot_row in range(spot_row_start, spot_row_end):
-				sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
-				if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
-					samples_for_cell.append(sample)
 		else:
-			# Sample the full area
-			for spot_subcol in range(spot_col_start, spot_col_end):
-				for spot_subrow in range(spot_row_start, spot_row_end):
-					sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+			# Use a sampler
+			samples_for_cell = []
+			spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
+			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
+			if not SAMPLE_FULL_AREA:
+				# Sample the center column
+				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
+				for spot_row in range(spot_row_start, spot_row_end):
+					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 						samples_for_cell.append(sample)
-		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
-		if len(samples_for_cell) == 0:
-			samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
-		spot_depth = SAMPLER(samples_for_cell)
-		return (len(samples_for_cell), spot_depth)
+			else:
+				# Sample the full area
+				for spot_subcol in range(spot_col_start, spot_col_end):
+					for spot_subrow in range(spot_row_start, spot_row_end):
+						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
+							samples_for_cell.append(sample)
+			# If we had no "good" samples, we may have a legit "MAX" sensor reading.
+			if len(samples_for_cell) == 0:
+				samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
+			spot_depth = SAMPLER(samples_for_cell)
+			return (len(samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):
-		now = time.time()
 		self.getSensorDepthMaps()
-		self.plotMappedDepths(now)
+		self.plotMappedDepths()
 
 	def initPlotter(self):
 		self.plotter = plotter.Plotter()

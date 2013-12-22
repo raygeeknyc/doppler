@@ -34,37 +34,14 @@ class Plotter:
 		return update_message.CellState.CHANGE_APPROACH_SLOW
 	return update_message.CellState.CHANGE_REST
 	
-    def updateIdleCells(self, now):
-	"Mark cells which most recently had motion but not recently as REST."
-	# This has been moved into the renderers for reasons of load balancing and performance.
-	idleCellCount = 0
-	activeCellCount = 0
-	expiredCellCount = 0
-	for col in range(0, self.COLUMNS):
-		for row in range(0, self.ROWS):
-	  		if (self._cells[col][row][1] != update_message.CellState.CHANGE_REST):
-				activeCellCount += 1
-	  		if (now - self._cells[col][row][2] >= AT_REST_DURATION):
-				expiredCellCount += 1
-	  		if (now - self._cells[col][row][2] >= AT_REST_DURATION
-	  			and self._cells[col][row][1] != update_message.CellState.CHANGE_REST
-				and not self._cells[col][row][3]):
-					idleCellCount += 1
-	  				self._cells[col][row][1] = update_message.CellState.CHANGE_REST
-					self._cells[col][row][2] = now
-					self.markCellForRefresh(col, row)
-	logging.debug("%d idle cells were updated" % idleCellCount)
-	logging.debug("%d expired cells and %d non-still cells" % (expiredCellCount, activeCellCount))
-
-    def updateCellState(self, x, y, distance, now):
+    def updateCellState(self, x, y, distance):
 	if (abs(self._cells[x][y][0] - distance) >= DISTANCE_MOTION_THRESHOLD):
 		self._cells[x][y][1] = self.cellStateForChange(self._cells[x][y][0],distance)
 		self._cells[x][y][0] = distance
-		self._cells[x][y][2] = now
 		self.markCellForRefresh(x,y)
 		
     def markCellForRefresh(self, x, y):
-	self._cells[x][y][3] = True
+	self._cells[x][y][2] = True
 
     def _zoneCoordForLocalCell(self, globalCoordinate):
         "Return a tuple of two tuples which contain the zone coordinate and zone-specific coordinates for a global cell coordinate tuple(x,y)."
@@ -75,6 +52,7 @@ class Plotter:
 
 	self._timeSending = 0
         self._changedCells = []
+	self._cells = None
 	self.PER_ZONE_CELL_DIMENSIONS = []
 	self.ROWS = None
 	self.COLUMNS = None
@@ -130,8 +108,8 @@ class Plotter:
 	currentZoneUpdates = []
 	for row in range(0, self.ROWS):
 		for col in range(0, self.COLUMNS):
-			if self._cells[col][row][3]:
-				# logging.debug("Cell %d,%d refresh flag %s" % (col, row, self._cells[col][row][3]))
+			if self._cells[col][row][2]:
+				# logging.debug("Cell %d,%d refresh flag %s" % (col, row, self._cells[col][row][2]))
 				remoteCellCoord = self._zoneCoordForLocalCell((col, row))
 				if (len(currentZoneUpdates) >= MAXIMUM_UPDATES_IN_MESSAGE):
 					logging.debug("Break on maximum number of updates in message %d" % len(currentZoneUpdates))
@@ -144,7 +122,7 @@ class Plotter:
 					currentZone = remoteCellCoord[0]
 	  			remoteCellUpdate = update_message.CellUpdate(self._cells[col][row][1], (remoteCellCoord[1][0], remoteCellCoord[1][1]))
 	  			currentZoneUpdates.append(remoteCellUpdate)
-				self._cells[col][row][3] = False
+				self._cells[col][row][2] = False
 	self._sendUpdatesForZone(currentZone, currentZoneUpdates)
 	logging.debug("Time connecting %d" % self._timeConnecting)
 	logging.debug("Time sending %d" % self._timeSending)
