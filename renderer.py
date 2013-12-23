@@ -17,7 +17,6 @@ HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
-MIN_IDLE_UPDATE_FREQ = 1.0  # Only check for idle updates this frequently
 UPDATE_DELAY_MS = 02  # refresh 1/500 sec after events
 
 CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
