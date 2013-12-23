@@ -36,6 +36,9 @@ class Plotter:
 	return update_message.CellState.CHANGE_REST
 	
     def updateCellState(self, x, y, distance):
+	if (x == (116+38) or x == (116+39)):
+		logging.info("HIT %d,%d" % (x-116,y))
+		pass
 	if (abs(self._cells[x][y][0] - distance) >= DISTANCE_MOTION_THRESHOLD):
 		self._cells[x][y][1] = self.cellStateForChange(self._cells[x][y][0], distance)
 		self._cells[x][y][0] = distance
@@ -113,11 +116,11 @@ class Plotter:
 				# logging.debug("Cell %d,%d refresh flag %s" % (col, row, self._cells[col][row][2]))
 				remoteCellCoord = self._zoneCoordForLocalCell((col, row))
 				if (len(currentZoneUpdates) >= MAXIMUM_UPDATES_IN_MESSAGE):
-					logging.debug("Break on maximum number of updates in message %d" % len(currentZoneUpdates))
+					#logging.debug("Break on maximum number of updates in message %d" % len(currentZoneUpdates))
 					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
 					currentZoneUpdates = []
 				if (remoteCellCoord[0] != currentZone):
-					logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
+					#logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
 					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
 					currentZoneUpdates = []
 					currentZone = remoteCellCoord[0]
@@ -125,14 +128,14 @@ class Plotter:
 	  			currentZoneUpdates.append(remoteCellUpdate)
 				self._cells[col][row][2] = False
 	self._sendUpdatesForZone(currentZone, currentZoneUpdates)
-	logging.debug("Time sending %d" % self._timeSending)
+	#logging.debug("Time sending %d" % self._timeSending)
 	
     def sendTestUpdates(self, localCellStates):
 	"Accumulate cellUpdates by zone, send per zone with transformed coordinates."
 	if not localCellStates:
 	  return
 	zone = self._zoneCoordForLocalCell((localCellStates[0].x, localCellStates[0].y))[0]
-        logging.debug("ZONE %s" % str(zone))
+        #logging.debug("ZONE %s" % str(zone))
 	zoneUpdates = []
 	for localCellState in localCellStates:
 	  remoteCellCoord = self._zoneCoordForLocalCell((localCellState.x, localCellState.y))
@@ -147,7 +150,7 @@ class Plotter:
     def _sendUpdatesForZone(self, zone, cellStates):
 	"Send the cellStates to the server at (zone) if we have an address for it."
 	if cellStates:
-		logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
+		#logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
 		start = time.time()
 		renderer = self._getRendererAddress(zone[0], zone[1])
 		if not renderer:
@@ -157,16 +160,17 @@ class Plotter:
 			self._sendUpdatesToRenderer(renderer, cellStates)
 			self._timeSending += (time.time() - start)
 	else:
-		logging.debug("Skipping empty updates for zone %s" % str(zone))
+		#logging.debug("Skipping empty updates for zone %s" % str(zone))
+		pass
 
     def _closeRenderer(self, renderer):
-	logging.debug("Closing connection to renderer %s" % str(renderer))
+	#logging.debug("Closing connection to renderer %s" % str(renderer))
 	renderer.close()
 	
     def _sendUpdatesToRenderer(self, renderer, cellStates):
 	seriesText = update_message.CellUpdate.seriesToText(cellStates)
-	logging.debug("Sending %d characters" % len(seriesText))
-	logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
+	#logging.debug("Sending %d characters" % len(seriesText))
+	#logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
 	try:
 		self._updateSocket.sendto(seriesText, (renderer, update_message.RENDERER_PORT))
 	except:
@@ -176,7 +180,7 @@ class Plotter:
 	rendererIndex = (update_message.RENDERER_ADDRESS_BASE_OCTET + 
 	  ZONES[0] * row + col)
 	address = update_message.RENDERER_ADDRESS_BASE + str(rendererIndex)
-        logging.debug("_getRendererAddress for %d,%d is %s." % (col, row, rendererIndex))
+        #logging.debug("_getRendererAddress for %d,%d is %s." % (col, row, rendererIndex))
 	return address
 
     def _configConnection(self, address):

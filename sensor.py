@@ -10,7 +10,7 @@ import logging
 import numpy
 import random
 import plotter
-import threading
+import sys
 import time
 
 # If using a SAMPLER, sample an entire mapped pixel or just the center column
@@ -82,7 +82,7 @@ class Stitcher(object):
 		else:
 			depth_map = self._depth_maps[self._kinect_right]
 			depth_col = spot_subcol - CENTER_SENSOR_EDGE
-		logging.debug("actual cell coord is %d,%d" % (spot_subrow, depth_col))
+		#logging.debug("actual cell coord is %d,%d" % (spot_subrow, depth_col))
 		#logging.debug("whose value is %d" % depth_map[depth_col][spot_subrow])
 		#logging.debug("map is %d,%d" % (len(depth_map), len(depth_map[0])))
 		return depth_map[spot_subrow][depth_col]
