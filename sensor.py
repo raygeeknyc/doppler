@@ -17,8 +17,8 @@ import time
 SAMPLE_FULL_AREA = False
 
 SAMPLER = None
-#SAMPLER = numpy.mean
-SAMPLER = numpy.median
+SAMPLER = numpy.mean
+#SAMPLER = numpy.median
 
 # The margin to cut out of the right side of the left sensor's map
 LEFT_OVERLAP_COLUMNS = 0
@@ -82,7 +82,7 @@ class Stitcher(object):
 		else:
 			depth_map = self._depth_maps[self._kinect_right]
 			depth_col = spot_subcol - CENTER_SENSOR_EDGE
-		#logging.debug("actual cell coord is %d,%d" % (depth_col, spot_subrow))
+		logging.debug("actual cell coord is %d,%d" % (spot_subrow, depth_col))
 		#logging.debug("whose value is %d" % depth_map[depth_col][spot_subrow])
 		#logging.debug("map is %d,%d" % (len(depth_map), len(depth_map[0])))
 		return depth_map[spot_subrow][depth_col]
@@ -114,13 +114,15 @@ class Stitcher(object):
 		within a cell's sensor cells should not matter.
 		"""
 		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
+		updated = 0
 		COL_LIMIT = self.plotter.COLUMNS - 1
 		for spot_col in range(0, self.plotter.COLUMNS):
 			flipped_col = COL_LIMIT - spot_col
 			for spot_row in range(0, self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
-					self.plotter.updateCellState(spot_col, spot_row, spot_depth)
+					updated += self.plotter.updateCellState(spot_col, spot_row, spot_depth)
+		logging.info("Updated %d cells" % updated)
 				
 	def calculateMergedDepth(self, col, row):
 		"Calculate the depth at a plotter map's cell using the specified SAMPLER."
@@ -142,7 +144,6 @@ class Stitcher(object):
 		else:
 			# Use a sampler
 			samples_for_cell = []
-			spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 			if not SAMPLE_FULL_AREA:
 				# Sample the center column
@@ -153,6 +154,7 @@ class Stitcher(object):
 						samples_for_cell.append(sample)
 			else:
 				# Sample the full area
+				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
 						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
@@ -182,7 +184,7 @@ class Stitcher(object):
 logging.getLogger().setLevel(logging.INFO)
 logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
-stitcher=Stitcher(0,1,2,0,0,testing=True)
+stitcher=Stitcher(0,1,2,0,0,testing=False)
 stitcher.initPlotter()
 while True:
 	start = time.time()

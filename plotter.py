@@ -18,7 +18,8 @@ DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
 AT_REST_DURATION = 04
 
 # We have 4 columns and 2 rows 
-ZONES=[1,1]
+#ZONES=[1,1]
+ZONES=[4,2]
 MAXIMUM_UPDATES_IN_MESSAGE = 1024  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 512
 
@@ -36,12 +37,12 @@ class Plotter:
 	
     def updateCellState(self, x, y, distance):
 	if (abs(self._cells[x][y][0] - distance) >= DISTANCE_MOTION_THRESHOLD):
-		self._cells[x][y][1] = self.cellStateForChange(self._cells[x][y][0],distance)
+		self._cells[x][y][1] = self.cellStateForChange(self._cells[x][y][0], distance)
 		self._cells[x][y][0] = distance
-		self.markCellForRefresh(x,y)
-		
-    def markCellForRefresh(self, x, y):
-	self._cells[x][y][2] = True
+		self._cells[x][y][2] = True
+		return 1
+	else:
+		return 0
 
     def _zoneCoordForLocalCell(self, globalCoordinate):
         "Return a tuple of two tuples which contain the zone coordinate and zone-specific coordinates for a global cell coordinate tuple(x,y)."
