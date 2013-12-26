@@ -14,9 +14,9 @@ import sys
 import time
 
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
-SAMPLE_FULL_AREA = False
-SAMPLER = numpy.mean
-#SAMPLER = numpy.median
+SAMPLE_FULL_AREA = True
+#SAMPLER = numpy.mean
+SAMPLER = numpy.median
 
 # The number of pixels to cut out of the right side of the left sensor's map
 LEFT_SENSOR_MARGIN = 15
@@ -64,6 +64,7 @@ class Stitcher(object):
 		self._depth_maps = [[], [], []]
 
 		self._depth_timestamps = [None, None, None]
+		self._max_depths = 0
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
@@ -116,6 +117,7 @@ class Stitcher(object):
 		"""
 		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
 		updated = 0
+		self._max_depths = 0
 		COL_LIMIT = self.plotter.COLUMNS - 1
 		for spot_col in range(0, self.plotter.COLUMNS):
 			flipped_col = COL_LIMIT - spot_col
@@ -123,6 +125,8 @@ class Stitcher(object):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 					updated += self.plotter.updateCellState(spot_col, spot_row, spot_depth)
+		if self._max_depths:
+			logging.warning("Unable to find non max readings for %d cells" % self._max_depths)
 		logging.info("Updated %d cells" % updated)
 				
 	def calculateMergedDepth(self, col, row):
@@ -155,6 +159,7 @@ class Stitcher(object):
 			# If we had no "good" samples, we may have a legit "MAX" sensor reading.
 			if len(samples_for_cell) == 0:
 				samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
+				self._max_depths += 1
 			spot_depth = SAMPLER(samples_for_cell)
 			return (len(samples_for_cell), spot_depth)
 
@@ -171,6 +176,7 @@ class Stitcher(object):
 
 		typical_distance = self.calculateMergedDepth(self.plotter.COLUMNS / 2, self.plotter.ROWS / 2)[1]
 		logging.debug("initial distance %s" % str(typical_distance))
+		logging.info("x,y sensor:display scaling factor %f,%f" % (self.COLUMN_SCALING_FACTOR, self.ROW_SCALING_FACTOR))
 		self.plotter.setAllCellDistances(typical_distance)
 
 logging.getLogger().setLevel(logging.INFO)

@@ -11,11 +11,9 @@ import time
 # The minimum change in distance that is seen as a "fast" approach or recession
 FAST_THRESHOLD = 100
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_THRESHOLD = 30
+SLOW_THRESHOLD = 40
 # The minimum change in distance that we see as relevant motion
 DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
-# How many seconds we leave an object at rest before marking it as REST
-AT_REST_DURATION = 04
 
 # We have 4 columns and 2 rows 
 #ZONES=[1,1]
@@ -25,20 +23,17 @@ RENDERER_CONFIG_MAX_LENGTH = 512
 
 class Plotter:
     def cellStateForChange(self, old_distance, new_distance):
-	if (new_distance - old_distance >= FAST_THRESHOLD):
+	if ((new_distance - old_distance) >= FAST_THRESHOLD):
 		return update_message.CellState.CHANGE_RECEDE_FAST
-	if (new_distance - old_distance >= SLOW_THRESHOLD):
+	if ((new_distance - old_distance) >= SLOW_THRESHOLD):
 		return update_message.CellState.CHANGE_RECEDE_SLOW
-	if (old_distance - new_distance >= FAST_THRESHOLD):
+	if ((old_distance - new_distance) >= FAST_THRESHOLD):
 		return update_message.CellState.CHANGE_APPROACH_FAST
-	if (old_distance - new_distance >= SLOW_THRESHOLD):
+	if ((old_distance - new_distance) >= SLOW_THRESHOLD):
 		return update_message.CellState.CHANGE_APPROACH_SLOW
 	return update_message.CellState.CHANGE_REST
 	
     def updateCellState(self, x, y, distance):
-	if (x == (116+38) or x == (116+39)):
-		logging.info("HIT %d,%d" % (x-116,y))
-		pass
 	if (abs(self._cells[x][y][0] - distance) >= DISTANCE_MOTION_THRESHOLD):
 		self._cells[x][y][1] = self.cellStateForChange(self._cells[x][y][0], distance)
 		self._cells[x][y][0] = distance
