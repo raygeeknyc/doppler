@@ -13,10 +13,8 @@ import plotter
 import sys
 import time
 
-# If using a SAMPLER, sample an entire mapped pixel or just the center column
+# When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
-
-SAMPLER = None
 SAMPLER = numpy.mean
 #SAMPLER = numpy.median
 
@@ -125,35 +123,26 @@ class Stitcher(object):
 		logging.info("Updated %d cells" % updated)
 				
 	def calculateMergedDepth(self, col, row):
-		"Calculate the depth at a plotter map's cell using the specified SAMPLER."
+		"Calculate the depth at a plotter map's cell using the center spot or the specified SAMPLER if the spot is at the maximum reading."
 		global SAMPLER
 
 		spot_col_start = int(col * self.COLUMN_SCALING_FACTOR)
 		spot_row_start = int(row * self.ROW_SCALING_FACTOR)
 
-		# Instead of sampling the area, just return one of 2 spots within the cell.
-		# This is done purely for speed, the samplers take 1.x seconds per frame,
-		# whereas this takes .2x seconds per frame.
-		if SAMPLER == None:
-			spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
-			if spot_depth == self.MAXIMUM_SENSOR_DEPTH_READING:
-				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
-				spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
-				spot_depth = self.getDepthAtVirtualCell(spot_col_end, spot_row_end)
+		# First try to just return the top left spot within the cell.
+		spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
+		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, spot_depth)
-		else:
-			# Use a sampler
+		else:  # Use a sampler
 			samples_for_cell = []
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
-			if not SAMPLE_FULL_AREA:
-				# Sample the center column
+			if not SAMPLE_FULL_AREA:  # Sample the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 				for spot_row in range(spot_row_start, spot_row_end):
 					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 						samples_for_cell.append(sample)
-			else:
-				# Sample the full area
+			else:  # Sample the entire mapped cell
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
