@@ -18,21 +18,24 @@ SAMPLE_FULL_AREA = False
 SAMPLER = numpy.mean
 #SAMPLER = numpy.median
 
-# The margin to cut out of the right side of the left sensor's map
-LEFT_OVERLAP_COLUMNS = 0
-# The margin to cut out of the left side of the right sensor's map
-RIGHT_OVERLAP_COLUMNS = 0
+# The number of pixels to cut out of the right side of the left sensor's map
+LEFT_SENSOR_MARGIN = 15
+# The number of pixels to cut out of the right side of the center sensor's map
+CENTER_SENSOR_MARGIN = 41
+# The number of pixels to cut out of the right side of the right sensor's map
+RIGHT_SENSOR_MARGIN = 7
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map
 SENSOR_ROWS = 480
 
 # Precompute these for speed, we use them often
-LEFT_SENSOR_EDGE = SENSOR_COLUMNS - LEFT_OVERLAP_COLUMNS
-CENTER_SENSOR_EDGE = LEFT_SENSOR_EDGE + SENSOR_COLUMNS
+LEFT_SENSOR_EDGE = SENSOR_COLUMNS - LEFT_SENSOR_MARGIN
+CENTER_SENSOR_EDGE = (LEFT_SENSOR_EDGE + SENSOR_COLUMNS) - CENTER_SENSOR_MARGIN
+RIGHT_SENSOR_EDGE = (CENTER_SENSOR_EDGE + SENSOR_COLUMNS) - RIGHT_SENSOR_MARGIN
 
 # The total number of columns in the stitched sensor maps
-STITCHED_COLUMNS = CENTER_SENSOR_EDGE + SENSOR_COLUMNS - RIGHT_OVERLAP_COLUMNS
+STITCHED_COLUMNS = RIGHT_SENSOR_EDGE
 # The total number of rows in the stitched sensor maps
 STITCHED_ROWS = SENSOR_ROWS
 
