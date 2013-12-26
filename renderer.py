@@ -17,9 +17,9 @@ HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
 MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
-UPDATE_DELAY_MS = 10  # refresh 1/100 sec after events
+UPDATE_DELAY_MS = 05  # refresh 1/200 sec after events
 
-CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 5.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)

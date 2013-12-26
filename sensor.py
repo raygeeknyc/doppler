@@ -5,6 +5,7 @@
 
 import copy
 import errno
+from itertools import chain
 import freenect
 import logging
 import numpy
@@ -139,7 +140,7 @@ class Stitcher(object):
 		# First try to just return the top left spot within the cell.
 		spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
-			return (1, spot_depth)
+			return (1, int(spot_depth))
 		else:  # Use a sampler
 			samples_for_cell = []
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
@@ -160,7 +161,7 @@ class Stitcher(object):
 			if len(samples_for_cell) == 0:
 				samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
 				self._max_depths += 1
-			spot_depth = SAMPLER(samples_for_cell)
+			spot_depth = int(SAMPLER(samples_for_cell))
 			return (len(samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):

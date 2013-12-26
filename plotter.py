@@ -9,11 +9,13 @@ import string
 import time
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_THRESHOLD = 100
+FAST_APPROACH_THRESHOLD = 80
+FAST_RECEDE_THRESHOLD = -80
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_THRESHOLD = 40
-# The minimum change in distance that we see as relevant motion
-DISTANCE_MOTION_THRESHOLD = SLOW_THRESHOLD
+SLOW_APPROACH_THRESHOLD = 30
+SLOW_RECEDE_THRESHOLD = -30
+# The minimum change in absolute distance that we see as motion
+DISTANCE_MOTION_THRESHOLD = 20
 
 # We have 4 columns and 2 rows 
 #ZONES=[1,1]
@@ -22,20 +24,21 @@ MAXIMUM_UPDATES_IN_MESSAGE = 1024  # This is to protect the renderers from exces
 RENDERER_CONFIG_MAX_LENGTH = 512
 
 class Plotter:
-    def cellStateForChange(self, old_distance, new_distance):
-	if ((new_distance - old_distance) >= FAST_THRESHOLD):
+    def cellStateForChange(self, distance_delta):
+	if (distance_delta < FAST_RECEDE_THRESHOLD):
 		return update_message.CellState.CHANGE_RECEDE_FAST
-	if ((new_distance - old_distance) >= SLOW_THRESHOLD):
+	if (distance_delta < SLOW_RECEDE_THRESHOLD):
 		return update_message.CellState.CHANGE_RECEDE_SLOW
-	if ((old_distance - new_distance) >= FAST_THRESHOLD):
+	if (distance_delta > FAST_APPROACH_THRESHOLD):
 		return update_message.CellState.CHANGE_APPROACH_FAST
-	if ((old_distance - new_distance) >= SLOW_THRESHOLD):
+	if (distance_delta > SLOW_APPROACH_THRESHOLD):
 		return update_message.CellState.CHANGE_APPROACH_SLOW
 	return update_message.CellState.CHANGE_REST
 	
     def updateCellState(self, x, y, distance):
-	if (abs(self._cells[x][y][0] - distance) >= DISTANCE_MOTION_THRESHOLD):
-		self._cells[x][y][1] = self.cellStateForChange(self._cells[x][y][0], distance)
+	delta = (self._cells[x][y][0]) - distance
+	if (abs(delta) >= DISTANCE_MOTION_THRESHOLD):
+		self._cells[x][y][1] = self.cellStateForChange(delta)
 		self._cells[x][y][0] = distance
 		self._cells[x][y][2] = True
 		return 1
