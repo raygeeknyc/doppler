@@ -65,7 +65,6 @@ class Stitcher(object):
 		self._depth_maps = [[], [], []]
 
 		self._depth_timestamps = [None, None, None]
-		self._max_depths = 0
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
@@ -77,18 +76,11 @@ class Stitcher(object):
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
 		if spot_subcol < LEFT_SENSOR_EDGE:
-			depth_map = self._depth_maps[self._kinect_left]
-			depth_col = spot_subcol
+			return self._depth_maps[self._kinect_left][spot_subcol]
 		elif spot_subcol < CENTER_SENSOR_EDGE:
-			depth_map = self._depth_maps[self._kinect_center]
-			depth_col = spot_subcol - LEFT_SENSOR_EDGE
+			return self._depth_maps[self._kinect_center][spot_subcol - LEFT_SENSOR_EDGE]
 		else:
-			depth_map = self._depth_maps[self._kinect_right]
-			depth_col = spot_subcol - CENTER_SENSOR_EDGE
-		#logging.debug("actual cell coord is %d,%d" % (spot_subrow, depth_col))
-		#logging.debug("whose value is %d" % depth_map[depth_col][spot_subrow])
-		#logging.debug("map is %d,%d" % (len(depth_map), len(depth_map[0])))
-		return depth_map[spot_subrow][depth_col]
+			return self._depth_maps[self._kinect_right][spot_subcol - CENTER_SENSOR_EDGE]
 
 	def getSensorDepthMap(self, sensor_idx):
 		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
@@ -117,18 +109,13 @@ class Stitcher(object):
 		within a cell's sensor cells should not matter.
 		"""
 		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
-		updated = 0
-		self._max_depths = 0
 		COL_LIMIT = self.plotter.COLUMNS - 1
 		for spot_col in range(0, self.plotter.COLUMNS):
 			flipped_col = COL_LIMIT - spot_col
 			for spot_row in range(0, self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
-					updated += self.plotter.updateCellState(spot_col, spot_row, spot_depth)
-		if self._max_depths:
-			logging.warning("Unable to find non max readings for %d cells" % self._max_depths)
-		logging.info("Updated %d cells" % updated)
+					self.plotter.updateCellState(spot_col, spot_row, spot_depth)
 				
 	def calculateMergedDepth(self, col, row):
 		"Calculate the depth at a plotter map's cell using the center spot or the specified SAMPLER if the spot is at the maximum reading."
@@ -160,7 +147,6 @@ class Stitcher(object):
 			# If we had no "good" samples, we may have a legit "MAX" sensor reading.
 			if len(samples_for_cell) == 0:
 				samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
-				self._max_depths += 1
 			spot_depth = int(SAMPLER(samples_for_cell))
 			return (len(samples_for_cell), spot_depth)
 

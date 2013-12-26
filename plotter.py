@@ -20,7 +20,6 @@ DISTANCE_MOTION_THRESHOLD = 20
 # We have 4 columns and 2 rows 
 #ZONES=[1,1]
 ZONES=[4,2]
-MAXIMUM_UPDATES_IN_MESSAGE = 1024  # This is to protect the renderers from excessively long update strings
 RENDERER_CONFIG_MAX_LENGTH = 512
 
 class Plotter:
@@ -41,9 +40,6 @@ class Plotter:
 		self._cells[x][y][1] = self.cellStateForChange(delta)
 		self._cells[x][y][0] = distance
 		self._cells[x][y][2] = True
-		return 1
-	else:
-		return 0
 
     def _zoneCoordForLocalCell(self, globalCoordinate):
         "Return a tuple of two tuples which contain the zone coordinate and zone-specific coordinates for a global cell coordinate tuple(x,y)."
@@ -98,25 +94,19 @@ class Plotter:
 	logging.debug("initAllCellsState set %d cols X %d rows, %d cells" % (len(self._cells), len(self._cells[0]), (len(self._cells) * len(self._cells[0]))))
 
     def refreshCells(self):
-	"Send pending updates, by column and row."
+	"Send pending updates, by row and column."
 
 	# This will interleave updates among zones so that all zones with pending
 	# updates in local row 0 will be sent those updates before any of row 1
-	# are sent. This will reduce blockiness in updates but assumes the local
-	# renderers to be faster at receiving their updates than they are at
-	# parsing and rendering them.
+	# are sent. This will reduce blockiness in update rendering across all
+	# 3 renderers.
 
 	currentZone =  self._zoneCoordForLocalCell((0, 0))[0]
 	currentZoneUpdates = []
 	for row in range(0, self.ROWS):
 		for col in range(0, self.COLUMNS):
 			if self._cells[col][row][2]:
-				# logging.debug("Cell %d,%d refresh flag %s" % (col, row, self._cells[col][row][2]))
 				remoteCellCoord = self._zoneCoordForLocalCell((col, row))
-				if (len(currentZoneUpdates) >= MAXIMUM_UPDATES_IN_MESSAGE):
-					#logging.debug("Break on maximum number of updates in message %d" % len(currentZoneUpdates))
-					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
-					currentZoneUpdates = []
 				if (remoteCellCoord[0] != currentZone):
 					#logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
 					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
