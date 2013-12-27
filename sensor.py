@@ -76,11 +76,11 @@ class Stitcher(object):
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
 		if spot_subcol < LEFT_SENSOR_EDGE:
-			return self._depth_maps[self._kinect_left][spot_subcol]
+			return self._depth_maps[self._kinect_left][spot_subrow][spot_subcol]
 		elif spot_subcol < CENTER_SENSOR_EDGE:
-			return self._depth_maps[self._kinect_center][spot_subcol - LEFT_SENSOR_EDGE]
+			return self._depth_maps[self._kinect_center][spot_subrow][spot_subcol - LEFT_SENSOR_EDGE]
 		else:
-			return self._depth_maps[self._kinect_right][spot_subcol - CENTER_SENSOR_EDGE]
+			return self._depth_maps[self._kinect_right][spot_subrow][spot_subcol - CENTER_SENSOR_EDGE]
 
 	def getSensorDepthMap(self, sensor_idx):
 		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)

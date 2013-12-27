@@ -19,7 +19,7 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
 
 UPDATE_DELAY_MS = 05  # refresh 1/200 sec after events
 
-CELL_IDLE_TIME = 5.0  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -32,8 +32,8 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 11
-    CELL_HEIGHT = 11
+    CELL_WIDTH = 10
+    CELL_HEIGHT = 10
     CELL_MARGIN = 03
 
     def __init__(self, left, top):
