@@ -15,10 +15,10 @@ import sys
 
 HOST = ''                 # Symbolic name meaning the local host
 MAXIMUM_CONFIG_MESSAGE_LEN = 512
-MAXIMUM_UPDATE_MESSAGE_LEN = 256*1024
+MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
-UPDATE_DELAY_MS = 05  # refresh 1/200 sec after events
-
+UPDATE_DELAY_MS = 10  # refresh 100 sec after events
+MAX_REFRESH_RATE = 0.1  # UNUSED - Sleep this long after redrawing cells
 CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
@@ -32,9 +32,9 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 10
-    CELL_HEIGHT = 10
-    CELL_MARGIN = 03
+    CELL_WIDTH = 12
+    CELL_HEIGHT = 12
+    CELL_MARGIN = 04
 
     def __init__(self, left, top):
       self._left = left
@@ -218,11 +218,8 @@ class App:
 
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-	logging.debug("%d pending batches of agingCells" % len(self._agingUpdates))
 	while len(self._agingUpdates) > 0 and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
-		logging.debug("Aged cells parsed at %f" % self._agingUpdates[0][0])
-		idleUpdates = self._agingUpdates.pop(0)[1]
-		logging.debug("%d aged updates" % len(idleUpdates))
+		idleExpiredTime, idleUpdates = self._agingUpdates.pop(0)
 
 		for idleUpdate in idleUpdates:
 	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, fill='#%02x%02x%02x' % stillColor)
@@ -233,7 +230,6 @@ class App:
 	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.color)
 	self._changedCells = []
 	App.redraw_time_consumption = (time.time() - start)
-                          
 
     def getConfigRequest(self):
 	configData = None
@@ -262,40 +258,42 @@ class App:
 	return
 
     def getCellUpdates(self):
-	while True:
-		start = time.time()
-		updateData = None
-		try:
-			updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
-			logging.debug("Received update of %d length" % len(updateData))
-		except:
-			#TODO: distinguish between resource not available and "real" errors
-			pass
-		if updateData:
-			self._cellUpdates.append([self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")])
-		App.update_time_consumption = (time.time() - start)
+	start = time.time()
+	updateData = None
+	try:
+		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+	except:
+		#TODO: distinguish between resource not available and "real" errors
+		pass
+	if updateData:
+		self._cellUpdates.append([self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")])
+	App.update_time_consumption = (time.time() - start)
 
     def updateCells(self):
 	now = time.time()
 	while len(self._cellUpdates) > 0:
 		updates = self._cellUpdates.popleft()
-		logging.debug("got %d cells to update" % len(updates))
 		for cellUpdate in updates:
 			self.updateCell(cellUpdate)
-		self._agingUpdates.append((time.time(), updates))
+		self._agingUpdates.append((now, updates))
 
     def refresh(self, root):
 	self.updateCells()
 	self.redraw()
-	logging.debug("update time: %f" % App.update_time_consumption)
-	logging.debug("redraw frequency: %f" % App.redraw_cycle_time)
-	logging.debug("redraw time: %f" % App.redraw_time_consumption)
-	logging.debug("idle time: %f" % App.idle_time_consumption)
+	#logging.debug("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	#logging.debug("update recv time: %f" % App.update_time_consumption)
+	#logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
+	#logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
+	#time.sleep(MAX_REFRESH_RATE)
 	root.after(UPDATE_DELAY_MS,self.refresh,root)
-	root.after(UPDATE_DELAY_MS,self.getConfigRequest)
+
+    def getRequests(self):
+	while True:
+		self.getCellUpdates()
+		self.getConfigRequest()
 
     def startRequestService(self):
-	self._updateThread = threading.Thread(target=self.getCellUpdates)
+	self._updateThread = threading.Thread(target=self.getRequests)
 	self._updateThread.daemon = True
 	self._updateThread.start()
 
@@ -347,7 +345,7 @@ a = App(window_base)
 logging.info("Starting threads %f" % time.time())
 a.startRequestService()
 logging.info("Scheduling refresh %f" % time.time())
-window_base.after(0, a.refresh(window_base))
+window_base.after(10, a.refresh(window_base))
 try:
 	window_base.mainloop()
 	logging.info("Ending")

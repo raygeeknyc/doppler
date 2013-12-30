@@ -17,6 +17,9 @@ SLOW_RECEDE_THRESHOLD = -30
 # The minimum change in absolute distance that we see as motion
 DISTANCE_MOTION_THRESHOLD = 20
 
+# How many cell updates to send in one message to a renderer
+MAXIMUM_CELL_UPDATES_PER_MESSAGE = 200  # This should be < 1400 bytes
+
 # We have 4 columns and 2 rows 
 #ZONES=[1,1]
 ZONES=[4,2]
@@ -107,7 +110,7 @@ class Plotter:
 		for col in range(0, self.COLUMNS):
 			if self._cells[col][row][2]:
 				remoteCellCoord = self._zoneCoordForLocalCell((col, row))
-				if (remoteCellCoord[0] != currentZone):
+				if (remoteCellCoord[0] != currentZone) or len(currentZoneUpdates) >= MAXIMUM_CELL_UPDATES_PER_MESSAGE:
 					#logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
 					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
 					currentZoneUpdates = []
@@ -127,7 +130,7 @@ class Plotter:
 	zoneUpdates = []
 	for localCellState in localCellStates:
 	  remoteCellCoord = self._zoneCoordForLocalCell((localCellState.x, localCellState.y))
-	  if remoteCellCoord[0] != zone:
+	  if remoteCellCoord[0] != zone or len(zoneUpdates) >= MAXIMUM_CELL_UPDATES_PER_MESSAGE:
 	    self._sendUpdatesForZone(zone, zoneUpdates)
 	    zoneUpdates = []
             zone = remoteCellCoord[0]
@@ -157,7 +160,7 @@ class Plotter:
 	
     def _sendUpdatesToRenderer(self, renderer, cellStates):
 	seriesText = update_message.CellUpdate.seriesToText(cellStates)
-	#logging.debug("Sending %d characters" % len(seriesText))
+	#logging.debug("Sending %d characters for %d updates" % (len(seriesText), len(cellStates)))
 	#logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
 	try:
 		self._updateSocket.sendto(seriesText, (renderer, update_message.RENDERER_PORT))
