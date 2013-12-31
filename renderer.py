@@ -13,12 +13,10 @@ import socket
 import string
 import sys
 
-HOST = ''                 # Symbolic name meaning the local host
-MAXIMUM_CONFIG_MESSAGE_LEN = 512
+HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
 UPDATE_DELAY_MS = 10  # refresh 100 sec after events
-MAX_REFRESH_RATE = 0.1  # UNUSED - Sleep this long after redrawing cells
 CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
@@ -32,9 +30,9 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 14
-    CELL_HEIGHT = 14
-    CELL_MARGIN = 04
+    CELL_WIDTH = 14  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 14  # This is a Pixels vertical pitch
+    CELL_MARGIN = 04  # This is the padding within a Pixel
 
     def __init__(self, left, top):
       self.x = left
@@ -42,14 +40,11 @@ class PixelBlock:
       self.color = _NEUTRAL_COLOR
       self.image = None
 
-    def setColor(self, rgb):
-      self.color = tuple(rgb)
+    def setColor(self, rgbString):
+      self.color = rgbString
 
     def getColor(self):
       return self.color
-
-    def draw(self):
-      pass
 
     def getLeftTop(self):
       """Return x,y screen coord tuple."""
@@ -59,26 +54,24 @@ class PixelBlock:
       """Return x,y screen coord tuple."""
       return ((self.x + 1) * self.CELL_WIDTH - self.CELL_MARGIN, (self.y + 1) * self.CELL_HEIGHT - self.CELL_MARGIN)
 
-
 _BRIGHTRED = (255,0,0)
 _BRIGHTBLUE = (0,0,255)
 _LIGHTGREY = (45,45,55)
 _DIMBLUE = (50,50,150)
 _DIMRED = (150,50,50)
 _DIMGREY = (20,15,20)
-_NEUTRAL_COLOR = (0,0,0)
 
 CELL_COLORS = {
-    update_message.CellState.CHANGE_APPROACH_SLOW: _DIMBLUE,
-    update_message.CellState.CHANGE_APPROACH_FAST: _BRIGHTBLUE,
-    update_message.CellState.CHANGE_RECEDE_SLOW: _DIMRED,
-    update_message.CellState.CHANGE_RECEDE_FAST: _BRIGHTRED,
-    update_message.CellState.CHANGE_REST: _LIGHTGREY,
-    update_message.CellState.CHANGE_STILL: _DIMGREY}
+    update_message.CellState.CHANGE_APPROACH_SLOW: '#%02x%02x%02x' % _DIMBLUE,
+    update_message.CellState.CHANGE_APPROACH_FAST: '#%02x%02x%02x' % _BRIGHTBLUE,
+    update_message.CellState.CHANGE_RECEDE_SLOW: '#%02x%02x%02x' % _DIMRED,
+    update_message.CellState.CHANGE_RECEDE_FAST: '#%02x%02x%02x' % _BRIGHTRED,
+    update_message.CellState.CHANGE_REST: '#%02x%02x%02x' % _LIGHTGREY,
+    update_message.CellState.CHANGE_STILL: '#%02x%02x%02x' % _DIMGREY}
+_NEUTRAL_COLOR = '#%02x%02x%02x' % (0,0,0)
 
 
 class App:
-
     update_time_consumption = 0.0
     idle_time_consumption = 0.0
     redraw_time_consumption = 0.0
@@ -109,8 +102,8 @@ class App:
                            height=self._screen_height, cursor="none", background='black')
         self._canvas.pack()                                                  
 	self._cellUpdates = collections.deque()
-        self._agingUpdates = []
-        self._changedCells = []
+        self._agingUpdates = collections.deque()
+        self._changedCells = collections.deque()
         self.initializeCells()
 	self.setAllCellsRandomly()
 	self.setupPixels()
@@ -193,6 +186,7 @@ class App:
         self._cellUpdates.append(cellUpdates)
   
     def setupPixels(self):
+	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
         for col in range(0, self._cols):
           for row in range(0, self._rows):
 	    cell = self._cells[col][row]
@@ -200,7 +194,9 @@ class App:
                           cell.getLeftTop()[1],
                           cell.getRightBottom()[0],
                           cell.getRightBottom()[1],
-                          fill='#%02x%02x%02x' % cell.color
+                          fill=cell.color,
+			  disabledfill=stillColor,
+			  state='normal'
                          )
 
     def redraw(self):                          
@@ -211,18 +207,18 @@ class App:
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
 	while len(self._agingUpdates) > 0 and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
-		idleExpiredTime, idleUpdates = self._agingUpdates.pop(0)
+		idleExpiredTime, idleUpdates = self._agingUpdates.popleft()
 
 		for idleUpdate in idleUpdates:
-	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, fill='#%02x%02x%02x' % stillColor)
+	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, state = 'disabled')
 		self._canvas.update_idletasks()
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
 	prior_row = 0
-	for cellToRefresh in self._changedCells:
-	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.color)
-	self._changedCells = []
+	while len(self._changedCells) > 0:
+	    cellToRefresh = self._changedCells.popleft()
+	    self._canvas.itemconfig(cellToRefresh.image, fill=cellToRefresh.color, state = 'normal')
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
@@ -278,7 +274,6 @@ class App:
 	logging.info("update recv time: %f" % App.update_time_consumption)
 	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
 	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
-	#time.sleep(MAX_REFRESH_RATE)
 	root.after(UPDATE_DELAY_MS,self.refresh,root)
 
     def getRequests(self):
@@ -299,31 +294,6 @@ class App:
 	except:
 		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
 		return None  # drop this update
-
-    def expandCellUpdateMessage(self, cellUpdateMessage):
-	# Not currently used by the plotter and expensive. See parseCellUpdate
-	try:
-		affectedCellStates = []
-		(state,x,y) = cellUpdateMessage.split(",")
-		if (x == "*"):
-		  xStart = 0
-		  xEnd = self._cols
-		else:
-		  xStart = int(x)
-		  xEnd = int(x)+1
-		if (y == "*"):
-		  yStart = 0
-		  yEnd = self._rows
-		else:
-		  yStart = int(y)
-		  yEnd = int(y)+1
-		for col in range(xStart, xEnd):
-		  for row in range(yStart, yEnd):
-		    affectedCellStates.append(update_message.CellUpdate.fromText(state+","+str(col)+","+str(row)))
-	except:
-		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
-		return []  # drop this update
-	return affectedCellStates
 
 logging.getLogger().setLevel(logging.DEBUG)
 window_base = Tkinter.Tk()
