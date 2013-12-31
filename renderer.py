@@ -37,8 +37,8 @@ class PixelBlock:
     CELL_MARGIN = 04
 
     def __init__(self, left, top):
-      self._left = left
-      self._top = top
+      self.x = left
+      self.y = top
       self.color = _NEUTRAL_COLOR
       self.image = None
 
@@ -51,21 +51,13 @@ class PixelBlock:
     def draw(self):
       pass
 
-    def getX(self):
-      """Return the X coord, not the X screen coord."""
-      return self._left
-
-    def getY(self):
-       """Return the Y coord, not the Y screen coord."""
-       return self._top
-
     def getLeftTop(self):
       """Return x,y screen coord tuple."""
-      return (self._left * self.CELL_WIDTH + self.CELL_MARGIN, self._top * self.CELL_HEIGHT + self.CELL_MARGIN)
+      return (self.x * self.CELL_WIDTH + self.CELL_MARGIN, self.y * self.CELL_HEIGHT + self.CELL_MARGIN)
 
     def getRightBottom(self):
       """Return x,y screen coord tuple."""
-      return ((self._left + 1) * self.CELL_WIDTH - self.CELL_MARGIN, (self._top + 1) * self.CELL_HEIGHT - self.CELL_MARGIN)
+      return ((self.x + 1) * self.CELL_WIDTH - self.CELL_MARGIN, (self.y + 1) * self.CELL_HEIGHT - self.CELL_MARGIN)
 
 
 _BRIGHTRED = (255,0,0)
@@ -191,8 +183,8 @@ class App:
         logging.debug("Setting all cells to random colors")
 	updateData = ""
 
-        for col in range(0, self._cols):
-          for row in range(0, self._rows):
+        for row in range(0, self._rows):
+          for col in range(0, self._cols):
 	      updateData += (update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)]+
                 ","+str(col)+","+str(row)+"|")
 	updateData = updateData[:-1]
@@ -223,9 +215,11 @@ class App:
 
 		for idleUpdate in idleUpdates:
 	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, fill='#%02x%02x%02x' % stillColor)
+		self._canvas.update_idletasks()
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
+	prior_row = 0
 	for cellToRefresh in self._changedCells:
 	    self._canvas.itemconfig(cellToRefresh.image, fill='#%02x%02x%02x' % cellToRefresh.color)
 	self._changedCells = []
@@ -280,10 +274,10 @@ class App:
     def refresh(self, root):
 	self.updateCells()
 	self.redraw()
-	#logging.debug("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	#logging.debug("update recv time: %f" % App.update_time_consumption)
-	#logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
-	#logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
+	logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	logging.info("update recv time: %f" % App.update_time_consumption)
+	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
+	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
 	#time.sleep(MAX_REFRESH_RATE)
 	root.after(UPDATE_DELAY_MS,self.refresh,root)
 
@@ -331,7 +325,7 @@ class App:
 		return []  # drop this update
 	return affectedCellStates
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 window_base = Tkinter.Tk()
 
 def quit_handler(signal, frame):
