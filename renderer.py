@@ -38,7 +38,7 @@ class PixelBlock:
       self.x = left
       self.y = top
       self.color = _NEUTRAL_COLOR
-      self.image = None
+      self.widget = None
 
     def setColor(self, rgbString):
       self.color = rgbString
@@ -190,7 +190,7 @@ class App:
         for col in range(0, self._cols):
           for row in range(0, self._rows):
 	    cell = self._cells[col][row]
-	    cell.image = self._canvas.create_rectangle(cell.getLeftTop()[0],
+	    cell.widget = self._canvas.create_rectangle(cell.getLeftTop()[0],
                           cell.getLeftTop()[1],
                           cell.getRightBottom()[0],
                           cell.getRightBottom()[1],
@@ -210,7 +210,7 @@ class App:
 		idleExpiredTime, idleUpdates = self._agingUpdates.popleft()
 
 		for idleUpdate in idleUpdates:
-	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].image, state = 'disabled')
+	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].widget, fill=stillColor)
 		self._canvas.update_idletasks()
 	App.idle_time_consumption = (time.time() - start)
 
@@ -218,7 +218,7 @@ class App:
 	prior_row = 0
 	while len(self._changedCells) > 0:
 	    cellToRefresh = self._changedCells.popleft()
-	    self._canvas.itemconfig(cellToRefresh.image, fill=cellToRefresh.color, state = 'normal')
+	    self._canvas.itemconfig(cellToRefresh.widget, fill=cellToRefresh.color)
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
