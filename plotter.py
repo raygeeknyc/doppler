@@ -50,7 +50,6 @@ class Plotter:
 
     def __init__(self):
 	self._timeSending = 0
-        self._changedCells = []
 	self._cells = None
 	self.PER_ZONE_CELL_DIMENSIONS = []
 	self.ROWS = None
@@ -105,7 +104,7 @@ class Plotter:
 	# 3 renderers.
 
 	currentZone =  self._zoneCoordForLocalCell((0, 0))[0]
-	currentZoneUpdates = []
+	currentZoneUpdates = collections.deque()
 	for row in range(0, self.ROWS):
 		for col in range(0, self.COLUMNS):
 			if self._cells[col][row][2]:
@@ -113,7 +112,7 @@ class Plotter:
 				if (remoteCellCoord[0] != currentZone) or len(currentZoneUpdates) >= MAXIMUM_CELL_UPDATES_PER_MESSAGE:
 					#logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
 					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
-					currentZoneUpdates = []
+					currentZoneUpdates.clear()
 					currentZone = remoteCellCoord[0]
 	  			remoteCellUpdate = update_message.CellUpdate(self._cells[col][row][1], (remoteCellCoord[1][0], remoteCellCoord[1][1]))
 	  			currentZoneUpdates.append(remoteCellUpdate)
@@ -127,12 +126,12 @@ class Plotter:
 	  return
 	zone = self._zoneCoordForLocalCell((localCellStates[0].x, localCellStates[0].y))[0]
         #logging.debug("ZONE %s" % str(zone))
-	zoneUpdates = []
+	zoneUpdates = collections.deque()
 	for localCellState in localCellStates:
 	  remoteCellCoord = self._zoneCoordForLocalCell((localCellState.x, localCellState.y))
 	  if remoteCellCoord[0] != zone or len(zoneUpdates) >= MAXIMUM_CELL_UPDATES_PER_MESSAGE:
 	    self._sendUpdatesForZone(zone, zoneUpdates)
-	    zoneUpdates = []
+	    zoneUpdates.clear()
             zone = remoteCellCoord[0]
 	  remoteCellUpdate = update_message.CellUpdate(localCellState.state, (remoteCellCoord[1][0], remoteCellCoord[1][1]))
 	  zoneUpdates.append(remoteCellUpdate)
@@ -140,7 +139,7 @@ class Plotter:
 
     def _sendUpdatesForZone(self, zone, cellStates):
 	"Send the cellStates to the server at (zone) if we have an address for it."
-	if cellStates:
+	if len(cellStates) > 0:
 		#logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
 		start = time.time()
 		renderer = self._getRendererAddress(zone[0], zone[1])

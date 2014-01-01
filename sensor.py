@@ -3,6 +3,7 @@
 
 "Test with import sensor;reload(sensor)"
 
+import collections
 import copy
 import errno
 from itertools import chain
@@ -15,7 +16,7 @@ import sys
 import time
 
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
-SAMPLE_FULL_AREA = True
+SAMPLE_FULL_AREA = False
 #SAMPLER = numpy.mean
 SAMPLER = numpy.median
 
@@ -129,7 +130,7 @@ class Stitcher(object):
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, int(spot_depth))
 		else:  # Use a sampler
-			samples_for_cell = []
+			samples_for_cell = collections.deque()
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 			if not SAMPLE_FULL_AREA:  # Sample the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
