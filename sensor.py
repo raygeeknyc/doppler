@@ -73,6 +73,7 @@ class Stitcher(object):
 
 		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[self._kinect_center]) ,len(self._depth_maps[self._kinect_center][0])))
 		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
+		self._samples_for_cell = collections.deque()  # This often created collection is stored as an attribute purely for performance
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
@@ -130,26 +131,26 @@ class Stitcher(object):
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, int(spot_depth))
 		else:  # Use a sampler
-			samples_for_cell = collections.deque()
+			self._samples_for_cell.clear()
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 			if not SAMPLE_FULL_AREA:  # Sample the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 				for spot_row in range(spot_row_start, spot_row_end):
 					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
-						samples_for_cell.append(sample)
+						self._samples_for_cell.append(sample)
 			else:  # Sample the entire mapped cell
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
 						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
-							samples_for_cell.append(sample)
+							self._samples_for_cell.append(sample)
 			# If we had no "good" samples, we may have a legit "MAX" sensor reading.
-			if len(samples_for_cell) == 0:
-				samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
-			spot_depth = int(SAMPLER(samples_for_cell))
-			return (len(samples_for_cell), spot_depth)
+			if len(self._samples_for_cell) == 0:
+				self._samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
+			spot_depth = int(SAMPLER(self._samples_for_cell))
+			return (len(self._samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):
 		self.getSensorDepthMaps()
