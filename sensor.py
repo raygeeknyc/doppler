@@ -110,10 +110,9 @@ class Stitcher(object):
 		It should be OK to flip at this coarse level as we are averaging the sensor points around a given cell so the orientation
 		within a cell's sensor cells should not matter.
 		"""
-		logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
-		COL_LIMIT = self.plotter.COLUMNS - 1
+		#logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
 		for spot_col in range(0, self.plotter.COLUMNS):
-			flipped_col = COL_LIMIT - spot_col
+			flipped_col = self.COL_LIMIT - spot_col
 			for spot_row in range(0, self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
@@ -148,7 +147,7 @@ class Stitcher(object):
 							self._samples_for_cell.append(sample)
 			# If we had no "good" samples, we may have a legit "MAX" sensor reading.
 			if len(self._samples_for_cell) == 0:
-				self._samples_for_cell.append(self.MAXIMUM_SENSOR_DEPTH_READING)
+				return (1, self.MAXIMUM_SENSOR_DEPTH_READING)
 			spot_depth = int(SAMPLER(self._samples_for_cell))
 			return (len(self._samples_for_cell), spot_depth)
 
@@ -167,6 +166,7 @@ class Stitcher(object):
 		logging.debug("initial distance %s" % str(typical_distance))
 		logging.info("x,y sensor:display scaling factor %f,%f" % (self.COLUMN_SCALING_FACTOR, self.ROW_SCALING_FACTOR))
 		self.plotter.setAllCellDistances(typical_distance)
+		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
 logging.getLogger().setLevel(logging.INFO)
 logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
