@@ -100,7 +100,7 @@ class Stitcher(object):
 			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = getDummyDepthMap()
 			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = getDummyDepthMap()
 			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = getDummyDepthMap()
-		logging.info("Got 3 maps in %f secs" % (time.time() - start))
+		logging.debug("Got 3 maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self):
 		"""
@@ -176,7 +176,7 @@ stitcher.initPlotter()
 while True:
 	start = time.time()
 	stitcher.updateDepthMaps()
-	logging.info("Update took %f secs" % (time.time() - start))
+	logging.debug("Update took %f secs" % (time.time() - start))
 	now = time.time()
 	stitcher.plotter.refreshCells()
-	logging.info("Refresh took %f secs" % (time.time() - now))
+	logging.debug("Refresh took %f secs" % (time.time() - now))

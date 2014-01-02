@@ -1,5 +1,6 @@
 "Install tcl tk python-tkinter python-modules."
 
+import collections
 import errno
 import logging
 import update_message
