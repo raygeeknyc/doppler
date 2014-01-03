@@ -269,10 +269,10 @@ class App:
     def refresh(self, root):
 	self.updateCells()
 	self.redraw()
-	logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	logging.info("update recv time: %f" % App.update_time_consumption)
-	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
-	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
+	#logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	#logging.info("update recv time: %f" % App.update_time_consumption)
+	#logging.info("idle cell plot time: %f" % App.idle_time_consumption)
+	#logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
 	root.after(UPDATE_DELAY_MS,self.refresh,root)
 
     def getRequests(self):
