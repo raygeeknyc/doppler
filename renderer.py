@@ -54,11 +54,11 @@ class PixelBlock:
       """Return x,y screen coord tuple."""
       return ((self.x + 1) * self.CELL_WIDTH - self.CELL_MARGIN, (self.y + 1) * self.CELL_HEIGHT - self.CELL_MARGIN)
 
-_BRIGHTRED = (255,0,0)
-_BRIGHTBLUE = (0,0,255)
+_BRIGHTRED = (255,50,50)
+_BRIGHTBLUE = (50,50,255)
 _LIGHTGREY = (45,45,55)
-_DIMBLUE = (50,50,150)
-_DIMRED = (150,50,50)
+_DIMBLUE = (45,45,120)
+_DIMRED = (120,45,45)
 _DIMGREY = (20,15,20)
 
 CELL_COLORS = {

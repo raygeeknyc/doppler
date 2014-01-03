@@ -15,6 +15,9 @@ import plotter
 import sys
 import time
 
+# this throttles the update/refresh cycle to protect the renderers from being overwhelmed
+INTER_FRAME_DELAY = 0.8
+
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
 #SAMPLER = numpy.mean
@@ -180,3 +183,4 @@ while True:
 	now = time.time()
 	stitcher.plotter.refreshCells()
 	logging.debug("Refresh took %f secs" % (time.time() - now))
+	time.sleep(INTER_FRAME_DELAY)
