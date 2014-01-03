@@ -287,7 +287,6 @@ class App:
 
     def parseCellUpdateMessage(self, cellUpdateMessage):
 	try:
-		cellState = None
 		(state,col,row) = cellUpdateMessage.split(",")
 		return update_message.CellUpdate.fromText(state+","+str(col)+","+str(row))
 	except:
