@@ -1,0 +1,12 @@
+setupCells()
+/setupCells() 136 x 66
+setAllCellsRandomly()
+/setAllCellsRandomly() took 0.165367
+setupCells()
+/setupCells() 136 x 66
+setAllCellsRandomly()
+/setAllCellsRandomly() took 0.159346
+setupCells()
+/setupCells() 136 x 66
+setAllCellsRandomly()
+/setAllCellsRandomly() took 0.164147
