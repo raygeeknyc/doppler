@@ -18,8 +18,7 @@ import sys
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
-UPDATE_DELAY_MS = 10  # refresh 100 sec after events
-CELL_IDLE_TIME = 4.0  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 2.0  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -32,9 +31,9 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 13  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 13  # This is a Pixels vertical pitch
-    CELL_MARGIN = 04  # This is the padding within a Pixel
+    CELL_WIDTH = 11  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 11  # This is a Pixels vertical pitch
+    CELL_MARGIN = 03  # This is the padding within a Pixel
     CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
@@ -191,7 +190,6 @@ class App:
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
-	prior_row = 0
 	while len(self._changedCells) > 0:
 	    cellToRefresh = self._changedCells.popleft()
 	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, cellToRefresh.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
@@ -232,8 +230,10 @@ class App:
 		#TODO: distinguish between resource not available and "real" errors
 		pass
 	if updateData:
-		self._cellUpdates.append([self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")])
+		cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+		self._cellUpdates.append(cellUpdates)
 	App.update_time_consumption = (time.time() - start)
+
 
     def updateCells(self):
 	now = time.time()
@@ -273,6 +273,7 @@ class App:
 logging.getLogger().setLevel(logging.INFO)
 
 pygame.init()
+pygame.mouse.set_visible(False)
 
 displayInfo = pygame.display.Info()
 displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)

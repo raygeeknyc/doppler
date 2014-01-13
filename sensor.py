@@ -16,9 +16,9 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = 1.25
+TARGET_FPS = 4.0
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
-_MAX_REFRESH_FREQUENCY = 1/TARGET_FPS
+_MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
@@ -176,6 +176,7 @@ class Stitcher(object):
 logging.getLogger().setLevel(logging.INFO)
 logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
+logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 stitcher=Stitcher(0,1,2,0,0,testing=False)
 stitcher.initPlotter()
 while True:
@@ -184,6 +185,9 @@ while True:
 	logging.debug("Update took %f secs" % (time.time() - start))
 	now = time.time()
 	stitcher.plotter.refreshCells()
-	frequency = time.time() - now
-	logging.debug("Refresh took %f secs" % frequency)
-	time.sleep(_MAX_REFRESH_FREQUENCY - frequency)
+	logging.debug("Refresh took %f secs" % (time.time() - now))
+	frequency = time.time() - start
+	if frequency < _MAX_REFRESH_FREQUENCY:
+		time.sleep((_MAX_REFRESH_FREQUENCY - frequency))
+	frequency = time.time() - start
+	logging.debug("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))

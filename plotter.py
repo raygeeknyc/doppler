@@ -10,8 +10,8 @@ import string
 import time
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_APPROACH_THRESHOLD = 100
-FAST_RECEDE_THRESHOLD = -100
+FAST_APPROACH_THRESHOLD = 80
+FAST_RECEDE_THRESHOLD = -80
 # The minimum change in distance that is seen as a "slow" approach or recession
 SLOW_APPROACH_THRESHOLD = 30
 SLOW_RECEDE_THRESHOLD = -30
