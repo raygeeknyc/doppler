@@ -2,10 +2,12 @@
 
 import collections
 import logging
+import pygame
+from pygame.locals import *
 import update_message
 import time
 import threading
-import Tkinter, random
+import random
 import resource
 import select
 import signal
@@ -33,12 +35,13 @@ class PixelBlock:
     CELL_WIDTH = 13  # This is a Pixels horizontal pitch
     CELL_HEIGHT = 13  # This is a Pixels vertical pitch
     CELL_MARGIN = 04  # This is the padding within a Pixel
+    CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
+    CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
     def __init__(self, left, top):
       self.x = left
       self.y = top
       self.color = _NEUTRAL_COLOR
-      self.widget = None
 
     def setColor(self, rgbString):
       self.color = rgbString
@@ -62,13 +65,13 @@ _DIMRED = (120,45,45)
 _DIMGREY = (20,15,20)
 
 CELL_COLORS = {
-    update_message.CellState.CHANGE_APPROACH_SLOW: '#%02x%02x%02x' % _DIMBLUE,
-    update_message.CellState.CHANGE_APPROACH_FAST: '#%02x%02x%02x' % _BRIGHTBLUE,
-    update_message.CellState.CHANGE_RECEDE_SLOW: '#%02x%02x%02x' % _DIMRED,
-    update_message.CellState.CHANGE_RECEDE_FAST: '#%02x%02x%02x' % _BRIGHTRED,
-    update_message.CellState.CHANGE_REST: '#%02x%02x%02x' % _LIGHTGREY,
-    update_message.CellState.CHANGE_STILL: '#%02x%02x%02x' % _DIMGREY}
-_NEUTRAL_COLOR = '#%02x%02x%02x' % (0,0,0)
+    update_message.CellState.CHANGE_APPROACH_SLOW: _DIMBLUE,
+    update_message.CellState.CHANGE_APPROACH_FAST: _BRIGHTBLUE,
+    update_message.CellState.CHANGE_RECEDE_SLOW: _DIMRED,
+    update_message.CellState.CHANGE_RECEDE_FAST: _BRIGHTRED,
+    update_message.CellState.CHANGE_REST: _LIGHTGREY,
+    update_message.CellState.CHANGE_STILL: _DIMGREY}
+_NEUTRAL_COLOR = (0,0,0)
 
 
 class App:
@@ -87,26 +90,21 @@ class App:
 	  logging.error("Getting color for unknown state '%s'" % str(state))
           return _NEUTRAL_COLOR
 
-    def __init__(self, master):
+    def __init__(self, info, surface):
         pad = 0
-        self._master = master
-        self._screen_width = self._master.winfo_screenwidth()
-        self._screen_height = self._master.winfo_screenheight()
+        self._surface = surface
+        self._display_info = info
+        self._screen_width = displayInfo.current_w
+        self._screen_height = displayInfo.current_h
         logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
-        self._master.geometry("{0}x{1}+0+0".format(self._screen_width-pad, self._screen_height-pad))
-        self._master.overrideredirect(1)
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
-        self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
-                           height=self._screen_height, cursor="none", background='black')
-        self._canvas.pack()                                                  
 	self._cellUpdates = collections.deque()
         self._agingUpdates = collections.deque()
         self._changedCells = collections.deque()
         self.initializeCells()
 	self.setAllCellsRandomly()
-	self.setupPixels()
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
 
@@ -148,6 +146,7 @@ class App:
 			self._configSocket.close()
 	except:
 		logging.exception("Error closing config socket")
+	sys.exit(0)
 
     def updateCell(self, cellState):
       """Change the cell described by cellState."""
@@ -185,20 +184,6 @@ class App:
 	logging.debug("Generated %d cell updates: '%s'" % (len(cellUpdates), cellUpdates))
         self._cellUpdates.append(cellUpdates)
   
-    def setupPixels(self):
-	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-        for col in range(0, self._cols):
-          for row in range(0, self._rows):
-	    cell = self._cells[col][row]
-	    cell.widget = self._canvas.create_rectangle(cell.getLeftTop()[0],
-                          cell.getLeftTop()[1],
-                          cell.getRightBottom()[0],
-                          cell.getRightBottom()[1],
-                          fill=cell.color,
-			  disabledfill=stillColor,
-			  state='normal'
-                         )
-
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
 	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
@@ -210,14 +195,14 @@ class App:
 		idleExpiredTime, idleUpdates = self._agingUpdates.popleft()
 
 		for idleUpdate in idleUpdates:
-	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].widget, fill=stillColor)
+			pygame.draw.rect(self._surface, stillColor, (idleUpdate.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, idleUpdate.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
 	prior_row = 0
 	while len(self._changedCells) > 0:
 	    cellToRefresh = self._changedCells.popleft()
-	    self._canvas.itemconfig(cellToRefresh.widget, fill=cellToRefresh.color)
+	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, cellToRefresh.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
@@ -266,14 +251,15 @@ class App:
 			self.updateCell(cellUpdate)
 		self._agingUpdates.append((now, updates))
 
-    def refresh(self, root):
+    def refresh(self):
 	self.updateCells()
 	self.redraw()
-	#logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	#logging.info("update recv time: %f" % App.update_time_consumption)
-	#logging.info("idle cell plot time: %f" % App.idle_time_consumption)
-	#logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
-	root.after(UPDATE_DELAY_MS,self.refresh,root)
+	logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	logging.info("update recv time: %f" % App.update_time_consumption)
+	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
+	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
+	pygame.display.update()
+
 
     def getRequests(self):
 	while True:
@@ -293,23 +279,26 @@ class App:
 		return None  # drop this update
 
 logging.getLogger().setLevel(logging.INFO)
-window_base = Tkinter.Tk()
+
+pygame.init()
+
+displayInfo = pygame.display.Info()
+displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h),pygame.FULLSCREEN)
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")
-	window_base.quit()
+	logging.info("Ending")
+	a.finish()
 
 signal.signal(signal.SIGINT, quit_handler)
 
-logging.info("creating window %f" % time.time())
-a = App(window_base)  
+a = App(displayInfo, displaySurface)  
 logging.info("Starting threads %f" % time.time())
 a.startRequestService()
-logging.info("Scheduling refresh %f" % time.time())
-window_base.after(10, a.refresh(window_base))
-try:
-	window_base.mainloop()
-	logging.info("Ending")
-except Exception as e:
-	logging.exception("Top level exception")
+while True:
+	try:
+		a.refresh()
+	except Exception as e:
+		logging.exception("Top level exception")
+		a.finish()
 a.finish()

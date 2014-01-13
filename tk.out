@@ -1,12 +1,12 @@
 setupCells()
-/setupCells() 136 x 66
+/setupCells() 136 x 74
 setAllCellsRandomly()
-/setAllCellsRandomly() took 0.165367
+/setAllCellsRandomly() took 0.234466
 setupCells()
-/setupCells() 136 x 66
+/setupCells() 136 x 74
 setAllCellsRandomly()
-/setAllCellsRandomly() took 0.159346
+/setAllCellsRandomly() took 0.241819
 setupCells()
-/setupCells() 136 x 66
+/setupCells() 136 x 74
 setAllCellsRandomly()
-/setAllCellsRandomly() took 0.164147
+/setAllCellsRandomly() took 0.228445
