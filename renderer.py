@@ -18,7 +18,7 @@ import sys
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
-CELL_IDLE_TIME = 2.0  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 2.5  # Set cells to idle after this many secs of inactivity
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -31,8 +31,8 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 11  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 11  # This is a Pixels vertical pitch
+    CELL_WIDTH = 10  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 10  # This is a Pixels vertical pitch
     CELL_MARGIN = 03  # This is the padding within a Pixel
     CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
@@ -149,12 +149,12 @@ class App:
     
     def initializeCells(self):
         """Set up the cells, no color set."""
-        self._cells = {}
+        self._cells = []
         for col in range(0, self._cols):
-          col_cells = {}
+          col_cells = []
           for row in range(0, self._rows):
-            col_cells[row] = PixelBlock(col, row)     
-          self._cells[col] = col_cells
+            col_cells.append(PixelBlock(col, row))
+          self._cells.append(col_cells)
 
     def _dumpCells(self):
         for col in range(0, self._cols):
@@ -246,10 +246,10 @@ class App:
     def refresh(self):
 	self.updateCells()
 	self.redraw()
-	logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	logging.info("update recv time: %f" % App.update_time_consumption)
-	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
-	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
+	#logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	#logging.info("update recv time: %f" % App.update_time_consumption)
+	#logging.info("idle cell plot time: %f" % App.idle_time_consumption)
+	#logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
 	pygame.display.update()
 
 
