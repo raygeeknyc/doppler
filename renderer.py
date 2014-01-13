@@ -49,14 +49,6 @@ class PixelBlock:
     def getColor(self):
       return self.color
 
-    def getLeftTop(self):
-      """Return x,y screen coord tuple."""
-      return (self.x * self.CELL_WIDTH + self.CELL_MARGIN, self.y * self.CELL_HEIGHT + self.CELL_MARGIN)
-
-    def getRightBottom(self):
-      """Return x,y screen coord tuple."""
-      return ((self.x + 1) * self.CELL_WIDTH - self.CELL_MARGIN, (self.y + 1) * self.CELL_HEIGHT - self.CELL_MARGIN)
-
 _BRIGHTRED = (255,50,50)
 _BRIGHTBLUE = (50,50,255)
 _LIGHTGREY = (45,45,55)
@@ -91,7 +83,6 @@ class App:
           return _NEUTRAL_COLOR
 
     def __init__(self, info, surface):
-        pad = 0
         self._surface = surface
         self._display_info = info
         self._screen_width = displayInfo.current_w
@@ -124,7 +115,7 @@ class App:
 	logging.debug("listening on port: %d" % getPort())
 
     def finish(self):
-	logging.debug("Finishing. Closing all sockets")
+	logging.info("Finishing. Closing all sockets")
 	try:
 		if self._dataSocket:
 			logging.debug("Closing data connection")
@@ -146,6 +137,7 @@ class App:
 			self._configSocket.close()
 	except:
 		logging.exception("Error closing config socket")
+	logging.info("Ending")
 	sys.exit(0)
 
     def updateCell(self, cellState):
@@ -283,11 +275,10 @@ logging.getLogger().setLevel(logging.INFO)
 pygame.init()
 
 displayInfo = pygame.display.Info()
-displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h),pygame.FULLSCREEN)
+displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")
-	logging.info("Ending")
 	a.finish()
 
 signal.signal(signal.SIGINT, quit_handler)
