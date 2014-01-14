@@ -20,6 +20,7 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
 CELL_IDLE_TIME = 2.5  # Set cells to idle after this many secs of inactivity
 
+MAINLOOP_DELAY = 0.0001  # Dirty way to avoid starving our request thread
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
     return (usage[2]*resource.getpagesize())/1048576.0
@@ -97,14 +98,14 @@ class App:
 	self.setAllCellsRandomly()
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
+	self.startRequestService()
+
 
     def initializeSockets(self):
 	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	self._dataSocket.bind((HOST, getPort()))
 	self._dataSocket.setblocking(0)
 
-	self._configConn = None
-	self._configAddr = None
 	self._configSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	self._configSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	self._configSocket.setblocking(1)
@@ -122,14 +123,6 @@ class App:
 	except:
 		logging.exception("Error shutting down data socket")
 
-	try:
-		if self._configConn:
-			logging.debug("Shutting down config connection")
-			self._configConn.shutdown(socket.SHUT_RDWR)
-			logging.debug("Closing config connection")
-			self._configConn.close()
-	except:
-		logging.exception("Error shutting down config connection")
 	try:
 		if self._configSocket:
 			logging.debug("Closing config socket")
@@ -196,44 +189,40 @@ class App:
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
-	configData = None
-	if not self._configConn:
-		try:
-			self._configConn, self._configAddr = self._configSocket.accept()
-		except:
-       			pass
-	if self._configConn:
-       	       	try:
-			logging.debug("Sending config")
-			self._sendRendererConfig()
-		except Exception as e:
-			logging.error("Error %s sending config" % e)
-		self._configConn.close()
-		self._configConn = None
-		self._configAddr = None
+	configConn = None
+	configAddr = None
+	try:
+		configConn, configAddr = self._configSocket.accept()
+		logging.info("Connection accepted from '%s'" % str(configAddr))
+	except:
+       		pass
+	if configConn:
+		logging.info("Sending config")
+		self._sendRendererConfig(configConn)
+		configConn.close()
 
-    def _sendRendererConfig(self):
+    def _sendRendererConfig(self, connection):
 	"Send our client the number of cols and rows we render."
-	if not self._configConn:
+	if not connection:
 		logging.error("No connection.")
 		return
-	logging.info("sending Configuration")
-	self._configConn.send(str(self._cols)+","+str(self._rows))
-	return
+	connection.send(str(self._cols)+","+str(self._rows))
 
     def getCellUpdates(self):
 	start = time.time()
 	updateData = None
+	if not self._dataSocket:
+		logging.error("No data socket")
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
 	except:
+		#logging.exception("recv error")
 		#TODO: distinguish between resource not available and "real" errors
 		pass
 	if updateData:
 		cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
 		self._cellUpdates.append(cellUpdates)
 	App.update_time_consumption = (time.time() - start)
-
 
     def updateCells(self):
 	now = time.time()
@@ -254,14 +243,16 @@ class App:
 
 
     def getRequests(self):
+	logging.debug("In request thread")
 	while True:
 		self.getCellUpdates()
 		self.getConfigRequest()
 
     def startRequestService(self):
-	self._updateThread = threading.Thread(target=self.getRequests)
-	self._updateThread.daemon = True
-	self._updateThread.start()
+	logging.info("Starting request thread")
+	self._requestThread = threading.Thread(target=self.getRequests, name="requests")
+	self._requestThread.daemon = True
+	self._requestThread.start()
 
     def parseCellUpdateMessage(self, cellUpdateMessage):
 	try:
@@ -276,7 +267,8 @@ pygame.init()
 pygame.mouse.set_visible(False)
 
 displayInfo = pygame.display.Info()
-displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
+#displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
+displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")
@@ -285,11 +277,10 @@ def quit_handler(signal, frame):
 signal.signal(signal.SIGINT, quit_handler)
 
 a = App(displayInfo, displaySurface)  
-logging.info("Starting threads %f" % time.time())
-a.startRequestService()
 while True:
 	try:
 		a.refresh()
+		time.sleep(MAINLOOP_DELAY)
 	except Exception as e:
 		logging.exception("Top level exception")
 		a.finish()
