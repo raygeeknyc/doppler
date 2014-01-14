@@ -43,12 +43,6 @@ class PixelBlock:
       self.y = top
       self.color = _NEUTRAL_COLOR
 
-    def setColor(self, rgbString):
-      self.color = rgbString
-
-    def getColor(self):
-      return self.color
-
 _BRIGHTRED = (255,50,50)
 _BRIGHTBLUE = (50,50,255)
 _LIGHTGREY = (45,45,55)
@@ -135,7 +129,7 @@ class App:
     def updateCell(self, cellState):
       """Change the cell described by cellState."""
       try:
-        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state))
+        self._cells[cellState.x][cellState.y].color = App._colorForState(cellState.state)
         self._changedCells.append(self._cells[cellState.x][cellState.y])
       except:
         logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
