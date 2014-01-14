@@ -18,9 +18,9 @@ import sys
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
-CELL_IDLE_TIME = 2.5  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 2.0  # Set cells to idle after this many secs of inactivity
 
-MAINLOOP_DELAY = 0.0001  # Dirty way to avoid starving our request thread
+MAINLOOP_DELAY = 0.01  # Dirty way to avoid starving our request thread
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
     return (usage[2]*resource.getpagesize())/1048576.0

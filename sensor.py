@@ -26,9 +26,9 @@ SAMPLE_FULL_AREA = False
 SAMPLER = numpy.median
 
 # The number of pixels to cut out of the right side of the left sensor's map
-LEFT_SENSOR_MARGIN = 15
+LEFT_SENSOR_MARGIN = 80
 # The number of pixels to cut out of the right side of the center sensor's map
-CENTER_SENSOR_MARGIN = 41
+CENTER_SENSOR_MARGIN = 150
 # The number of pixels to cut out of the right side of the right sensor's map
 RIGHT_SENSOR_MARGIN = 7
 # The known width of a sensor's depth map
@@ -172,7 +172,7 @@ class Stitcher(object):
 		self.plotter.setAllCellDistances(typical_distance)
 		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
