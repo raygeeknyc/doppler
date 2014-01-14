@@ -1,7 +1,7 @@
 import time
 
-COLS=1900
-ROWS=150
+COLS=1900/4
+ROWS=150/2
 
 l = []
 for x in range(COLS):
