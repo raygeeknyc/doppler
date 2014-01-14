@@ -267,8 +267,7 @@ pygame.init()
 pygame.mouse.set_visible(False)
 
 displayInfo = pygame.display.Info()
-#displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
-displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
+displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")
