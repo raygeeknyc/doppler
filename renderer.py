@@ -122,11 +122,6 @@ class App:
 	logging.info("Ending")
 	sys.exit(0)
 
-    def updateCell(self, cellState):
-      """Change the cell described by cellState."""
-      self._cells[cellState.x][cellState.y].color = App._colorForState(cellState.state)
-      self._changedCells.append(self._cells[cellState.x][cellState.y])
-    
     def initializeCells(self):
         """Set up the cells, no color set."""
         self._cells = []
@@ -215,7 +210,8 @@ class App:
 	while len(self._cellUpdates) > 0:
 		updates = self._cellUpdates.popleft()
 		for cellUpdate in updates:
-			self.updateCell(cellUpdate)
+      			self._cells[cellUpdate.x][cellUpdate.y].color = App._colorForState(cellUpdate.state)
+		      	self._changedCells.append(self._cells[cellUpdate.x][cellUpdate.y])
 		self._agingUpdates.append((now, updates))
 
     def refresh(self):
