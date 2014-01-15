@@ -146,8 +146,7 @@ class App:
 	      updateData += (update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)]+
                 ","+str(col)+","+str(row)+"|")
 	updateData = updateData[:-1]
-	cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
-	logging.debug("Generated %d cell updates: '%s'" % (len(cellUpdates), cellUpdates))
+	cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData.split("|")]
         self._cellUpdates.append(cellUpdates)
   
     def redraw(self):                          
@@ -201,7 +200,7 @@ class App:
 		#TODO: distinguish between resource not available and "real" errors
 		pass
 	if updateData:
-		cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+		cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData.split("|")]
 		self._cellUpdates.append(cellUpdates)
 	App.update_time_consumption = (time.time() - start)
 
@@ -236,8 +235,6 @@ class App:
 	self._requestThread.daemon = True
 	self._requestThread.start()
 
-    def parseCellUpdateMessage(self, cellUpdateMessage):
-	return update_message.CellUpdate.fromText(cellUpdateMessage)
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -246,6 +243,7 @@ pygame.mouse.set_visible(False)
 
 displayInfo = pygame.display.Info()
 displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
+#displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")
