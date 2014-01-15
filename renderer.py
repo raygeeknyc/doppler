@@ -69,12 +69,8 @@ class App:
 
     @staticmethod
     def _colorForState(state):
-        """Return the color for state, neutral if the state is unknown."""
-        try:
-          return CELL_COLORS[state]
-        except KeyError:
-	  logging.error("Getting color for unknown state '%s'" % str(state))
-          return _NEUTRAL_COLOR
+        """Return the color for state."""
+        return CELL_COLORS[state]
 
     def __init__(self, info, surface):
         self._surface = surface
@@ -128,11 +124,8 @@ class App:
 
     def updateCell(self, cellState):
       """Change the cell described by cellState."""
-      try:
-        self._cells[cellState.x][cellState.y].color = App._colorForState(cellState.state)
-        self._changedCells.append(self._cells[cellState.x][cellState.y])
-      except:
-        logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
+      self._cells[cellState.x][cellState.y].color = App._colorForState(cellState.state)
+      self._changedCells.append(self._cells[cellState.x][cellState.y])
     
     def initializeCells(self):
         """Set up the cells, no color set."""
@@ -210,7 +203,6 @@ class App:
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
 	except:
-		#logging.exception("recv error")
 		#TODO: distinguish between resource not available and "real" errors
 		pass
 	if updateData:
@@ -249,11 +241,7 @@ class App:
 	self._requestThread.start()
 
     def parseCellUpdateMessage(self, cellUpdateMessage):
-	try:
-		return update_message.CellUpdate.fromText(cellUpdateMessage)
-	except:
-		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
-		return None  # drop this update
+	return update_message.CellUpdate.fromText(cellUpdateMessage)
 
 logging.getLogger().setLevel(logging.INFO)
 
