@@ -15,6 +15,11 @@ import socket
 import string
 import sys
 
+if len(sys.argv) > 1 and sys.argv[1] == "debug":
+	DEBUG_DISPLAY=True
+else:
+	DEBUG_DISPLAY=False
+
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
@@ -242,8 +247,10 @@ pygame.init()
 pygame.mouse.set_visible(False)
 
 displayInfo = pygame.display.Info()
-displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
-#displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
+if DEBUG_DISPLAY:
+	displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
+else:
+	displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")

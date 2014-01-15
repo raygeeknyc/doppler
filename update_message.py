@@ -29,21 +29,9 @@ class CellState(object):
 class CellUpdate(object):
     def __init__(self, cell_state, coords):
       """state, (x,y)."""
-      self._x = coords[0]
-      self._y = coords[1]
-      self._state = cell_state
-
-    @property
-    def state(self):
-      return self._state
-
-    @property
-    def x(self):
-      return self._x
-
-    @property
-    def y(self):
-      return self._y
+      self.x = coords[0]
+      self.y = coords[1]
+      self.state = cell_state
 
     @staticmethod
     def seriesToText(cellSeries):
@@ -61,4 +49,4 @@ class CellUpdate(object):
 	return None
 
     def asText(self):
-      return self._state+","+str(self._x)+","+str(self._y)
+      return self.state+","+str(self.x)+","+str(self.y)
