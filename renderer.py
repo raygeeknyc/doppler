@@ -1,4 +1,4 @@
-"Install tcl tk python-tkinter python-modules."
+"Install tcl tk python-modules pygame."
 
 import collections
 import logging
