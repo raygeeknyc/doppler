@@ -23,8 +23,8 @@ _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
 SAMPLER = None
-#SAMPLER = numpy.mean
 #SAMPLER = numpy.median
+#SAMPLER = numpy.mean
 
 # The number of pixels to cut out of the right side of the left sensor's map
 LEFT_SENSOR_MARGIN = 80
@@ -100,7 +100,6 @@ class Stitcher(object):
 			self.getSensorDepthMap(self._kinect_left)
 			self.getSensorDepthMap(self._kinect_center)
 			self.getSensorDepthMap(self._kinect_right)
-			logging.debug("done")
 		else:
 			logging.debug("Getting 3 dummy depth maps")
 			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = getDummyDepthMap()
@@ -116,7 +115,6 @@ class Stitcher(object):
 		It should be OK to flip at this coarse level as we are averaging the sensor points around a given cell so the orientation
 		within a cell's sensor cells should not matter.
 		"""
-		#logging.debug("calculating depths for %d,%d cells" % (self.plotter.COLUMNS, self.plotter.ROWS))
 		for spot_col in range(0, self.plotter.COLUMNS):
 			flipped_col = self.COL_LIMIT - spot_col
 			for spot_row in range(0, self.plotter.ROWS):
