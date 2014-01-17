@@ -1,13 +1,11 @@
-"Install tcl tk python-modules pygame."
+"Install tcl tk python-tkinter python-modules."
 
 import collections
 import logging
-import pygame
-from pygame.locals import *
 import update_message
 import time
 import threading
-import random
+import Tkinter, random
 import resource
 import select
 import signal
@@ -15,17 +13,12 @@ import socket
 import string
 import sys
 
-if len(sys.argv) > 1 and sys.argv[1] == "debug":
-	DEBUG_DISPLAY=True
-else:
-	DEBUG_DISPLAY=False
-
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
-CELL_IDLE_TIME = 2.0  # Set cells to idle after this many secs of inactivity
+UPDATE_DELAY_MS = 10  # refresh 100 sec after events
+CELL_IDLE_TIME = 3.5  # Set cells to idle after this many secs of inactivity
 
-MAINLOOP_DELAY = 0.01  # Dirty way to avoid starving our request thread
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
     return (usage[2]*resource.getpagesize())/1048576.0
@@ -37,16 +30,29 @@ class updateListener:
     pass
 
 class PixelBlock:
-    CELL_WIDTH = 10  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 10  # This is a Pixels vertical pitch
-    CELL_MARGIN = 03  # This is the padding within a Pixel
-    CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
-    CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
+    CELL_WIDTH = 13  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 13  # This is a Pixels vertical pitch
+    CELL_MARGIN = 04  # This is the padding within a Pixel
 
     def __init__(self, left, top):
       self.x = left
       self.y = top
       self.color = _NEUTRAL_COLOR
+      self.widget = None
+
+    def setColor(self, rgbString):
+      self.color = rgbString
+
+    def getColor(self):
+      return self.color
+
+    def getLeftTop(self):
+      """Return x,y screen coord tuple."""
+      return (self.x * self.CELL_WIDTH + self.CELL_MARGIN, self.y * self.CELL_HEIGHT + self.CELL_MARGIN)
+
+    def getRightBottom(self):
+      """Return x,y screen coord tuple."""
+      return ((self.x + 1) * self.CELL_WIDTH - self.CELL_MARGIN, (self.y + 1) * self.CELL_HEIGHT - self.CELL_MARGIN)
 
 _BRIGHTRED = (255,50,50)
 _BRIGHTBLUE = (50,50,255)
@@ -56,13 +62,13 @@ _DIMRED = (120,45,45)
 _DIMGREY = (20,15,20)
 
 CELL_COLORS = {
-    update_message.CellState.CHANGE_APPROACH_SLOW: _DIMBLUE,
-    update_message.CellState.CHANGE_APPROACH_FAST: _BRIGHTBLUE,
-    update_message.CellState.CHANGE_RECEDE_SLOW: _DIMRED,
-    update_message.CellState.CHANGE_RECEDE_FAST: _BRIGHTRED,
-    update_message.CellState.CHANGE_REST: _LIGHTGREY,
-    update_message.CellState.CHANGE_STILL: _DIMGREY}
-_NEUTRAL_COLOR = (0,0,0)
+    update_message.CellState.CHANGE_APPROACH_SLOW: '#%02x%02x%02x' % _DIMBLUE,
+    update_message.CellState.CHANGE_APPROACH_FAST: '#%02x%02x%02x' % _BRIGHTBLUE,
+    update_message.CellState.CHANGE_RECEDE_SLOW: '#%02x%02x%02x' % _DIMRED,
+    update_message.CellState.CHANGE_RECEDE_FAST: '#%02x%02x%02x' % _BRIGHTRED,
+    update_message.CellState.CHANGE_REST: '#%02x%02x%02x' % _LIGHTGREY,
+    update_message.CellState.CHANGE_STILL: '#%02x%02x%02x' % _DIMGREY}
+_NEUTRAL_COLOR = '#%02x%02x%02x' % (0,0,0)
 
 
 class App:
@@ -74,33 +80,43 @@ class App:
 
     @staticmethod
     def _colorForState(state):
-        """Return the color for state."""
-        return CELL_COLORS[state]
+        """Return the color for state, neutral if the state is unknown."""
+        try:
+          return CELL_COLORS[state]
+        except KeyError:
+	  logging.error("Getting color for unknown state '%s'" % str(state))
+          return _NEUTRAL_COLOR
 
-    def __init__(self, info, surface):
-        self._surface = surface
-        self._display_info = info
-        self._screen_width = displayInfo.current_w
-        self._screen_height = displayInfo.current_h
+    def __init__(self, master):
+        pad = 0
+        self._master = master
+        self._screen_width = self._master.winfo_screenwidth()
+        self._screen_height = self._master.winfo_screenheight()
         logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
+        self._master.geometry("{0}x{1}+0+0".format(self._screen_width-pad, self._screen_height-pad))
+        self._master.overrideredirect(1)
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
+        self._canvas = Tkinter.Canvas(self._master, width=self._screen_width,
+                           height=self._screen_height, cursor="none", background='black')
+        self._canvas.pack()                                                  
 	self._cellUpdates = collections.deque()
         self._agingUpdates = collections.deque()
         self._changedCells = collections.deque()
         self.initializeCells()
 	self.setAllCellsRandomly()
+	self.setupPixels()
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
-	self.startRequestService()
-
 
     def initializeSockets(self):
 	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	self._dataSocket.bind((HOST, getPort()))
 	self._dataSocket.setblocking(0)
 
+	self._configConn = None
+	self._configAddr = None
 	self._configSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	self._configSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	self._configSocket.setblocking(1)
@@ -110,7 +126,7 @@ class App:
 	logging.debug("listening on port: %d" % getPort())
 
     def finish(self):
-	logging.info("Finishing. Closing all sockets")
+	logging.debug("Finishing. Closing all sockets")
 	try:
 		if self._dataSocket:
 			logging.debug("Closing data connection")
@@ -119,22 +135,36 @@ class App:
 		logging.exception("Error shutting down data socket")
 
 	try:
+		if self._configConn:
+			logging.debug("Shutting down config connection")
+			self._configConn.shutdown(socket.SHUT_RDWR)
+			logging.debug("Closing config connection")
+			self._configConn.close()
+	except:
+		logging.exception("Error shutting down config connection")
+	try:
 		if self._configSocket:
 			logging.debug("Closing config socket")
 			self._configSocket.close()
 	except:
 		logging.exception("Error closing config socket")
-	logging.info("Ending")
-	sys.exit(0)
 
+    def updateCell(self, cellState):
+      """Change the cell described by cellState."""
+      try:
+        self._cells[cellState.x][cellState.y].setColor(App._colorForState(cellState.state))
+        self._changedCells.append(self._cells[cellState.x][cellState.y])
+      except:
+        logging.exception("Error at %d,%d = %s" % (cellState.x,cellState.y,cellState.state))
+    
     def initializeCells(self):
         """Set up the cells, no color set."""
-        self._cells = []
+        self._cells = {}
         for col in range(0, self._cols):
-          col_cells = []
+          col_cells = {}
           for row in range(0, self._rows):
-            col_cells.append(PixelBlock(col, row))
-          self._cells.append(col_cells)
+            col_cells[row] = PixelBlock(col, row)     
+          self._cells[col] = col_cells
 
     def _dumpCells(self):
         for col in range(0, self._cols):
@@ -151,9 +181,24 @@ class App:
 	      updateData += (update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)]+
                 ","+str(col)+","+str(row)+"|")
 	updateData = updateData[:-1]
-	cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData.split("|")]
+	cellUpdates = [self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")]
+	logging.debug("Generated %d cell updates: '%s'" % (len(cellUpdates), cellUpdates))
         self._cellUpdates.append(cellUpdates)
   
+    def setupPixels(self):
+	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
+        for col in range(0, self._cols):
+          for row in range(0, self._rows):
+	    cell = self._cells[col][row]
+	    cell.widget = self._canvas.create_rectangle(cell.getLeftTop()[0],
+                          cell.getLeftTop()[1],
+                          cell.getRightBottom()[0],
+                          cell.getRightBottom()[1],
+                          fill=cell.color,
+			  disabledfill=stillColor,
+			  state='normal'
+                         )
+
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
 	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
@@ -165,48 +210,52 @@ class App:
 		idleExpiredTime, idleUpdates = self._agingUpdates.popleft()
 
 		for idleUpdate in idleUpdates:
-			pygame.draw.rect(self._surface, stillColor, (idleUpdate.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, idleUpdate.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+	    		self._canvas.itemconfig(self._cells[idleUpdate.x][idleUpdate.y].widget, fill=stillColor)
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
+	prior_row = 0
 	while len(self._changedCells) > 0:
 	    cellToRefresh = self._changedCells.popleft()
-	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, cellToRefresh.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
+	    self._canvas.itemconfig(cellToRefresh.widget, fill=cellToRefresh.color)
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
-	configConn = None
-	configAddr = None
-	try:
-		configConn, configAddr = self._configSocket.accept()
-		logging.info("Connection accepted from '%s'" % str(configAddr))
-	except:
-       		pass
-	if configConn:
-		logging.info("Sending config")
-		self._sendRendererConfig(configConn)
-		configConn.close()
+	configData = None
+	if not self._configConn:
+		try:
+			self._configConn, self._configAddr = self._configSocket.accept()
+		except:
+       			pass
+	if self._configConn:
+       	       	try:
+			logging.debug("Sending config")
+			self._sendRendererConfig()
+		except Exception as e:
+			logging.error("Error %s sending config" % e)
+		self._configConn.close()
+		self._configConn = None
+		self._configAddr = None
 
-    def _sendRendererConfig(self, connection):
+    def _sendRendererConfig(self):
 	"Send our client the number of cols and rows we render."
-	if not connection:
+	if not self._configConn:
 		logging.error("No connection.")
 		return
-	connection.send(str(self._cols)+","+str(self._rows))
+	logging.info("sending Configuration")
+	self._configConn.send(str(self._cols)+","+str(self._rows))
+	return
 
     def getCellUpdates(self):
 	start = time.time()
 	updateData = None
-	if not self._dataSocket:
-		logging.error("No data socket")
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
 	except:
 		#TODO: distinguish between resource not available and "real" errors
 		pass
 	if updateData:
-		cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData.split("|")]
-		self._cellUpdates.append(cellUpdates)
+		self._cellUpdates.append([self.parseCellUpdateMessage(cellMessage) for cellMessage in updateData.split("|")])
 	App.update_time_consumption = (time.time() - start)
 
     def updateCells(self):
@@ -214,56 +263,53 @@ class App:
 	while len(self._cellUpdates) > 0:
 		updates = self._cellUpdates.popleft()
 		for cellUpdate in updates:
-      			self._cells[cellUpdate.x][cellUpdate.y].color = App._colorForState(cellUpdate.state)
-		      	self._changedCells.append(self._cells[cellUpdate.x][cellUpdate.y])
+			self.updateCell(cellUpdate)
 		self._agingUpdates.append((now, updates))
 
-    def refresh(self):
+    def refresh(self, root):
 	self.updateCells()
 	self.redraw()
 	#logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
 	#logging.info("update recv time: %f" % App.update_time_consumption)
 	#logging.info("idle cell plot time: %f" % App.idle_time_consumption)
 	#logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
-	pygame.display.update()
-
+	root.after(UPDATE_DELAY_MS,self.refresh,root)
 
     def getRequests(self):
-	logging.debug("In request thread")
 	while True:
 		self.getCellUpdates()
 		self.getConfigRequest()
 
     def startRequestService(self):
-	logging.info("Starting request thread")
-	self._requestThread = threading.Thread(target=self.getRequests, name="requests")
-	self._requestThread.daemon = True
-	self._requestThread.start()
+	self._updateThread = threading.Thread(target=self.getRequests)
+	self._updateThread.daemon = True
+	self._updateThread.start()
 
+    def parseCellUpdateMessage(self, cellUpdateMessage):
+	try:
+		return update_message.CellUpdate.fromText(cellUpdateMessage)
+	except:
+		logging.warning("Error parsing cell update '%s'" % cellUpdateMessage)
+		return None  # drop this update
 
 logging.getLogger().setLevel(logging.INFO)
-
-pygame.init()
-pygame.mouse.set_visible(False)
-
-displayInfo = pygame.display.Info()
-if DEBUG_DISPLAY:
-	displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
-else:
-	displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
+window_base = Tkinter.Tk()
 
 def quit_handler(signal, frame):
 	logging.info("Interrupted")
-	a.finish()
+	window_base.quit()
 
 signal.signal(signal.SIGINT, quit_handler)
 
-a = App(displayInfo, displaySurface)  
-while True:
-	try:
-		a.refresh()
-		time.sleep(MAINLOOP_DELAY)
-	except Exception as e:
-		logging.exception("Top level exception")
-		a.finish()
+logging.info("creating window %f" % time.time())
+a = App(window_base)  
+logging.info("Starting threads %f" % time.time())
+a.startRequestService()
+logging.info("Scheduling refresh %f" % time.time())
+window_base.after(10, a.refresh(window_base))
+try:
+	window_base.mainloop()
+	logging.info("Ending")
+except Exception as e:
+	logging.exception("Top level exception")
 a.finish()

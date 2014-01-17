@@ -7,8 +7,8 @@ RENDERER_ADDRESS_BASE_OCTET = 101     # beaglexm0
 #RENDERER_ADDRESS_BASE = "127.0.0."  # octets ending in a dot
 #RENDERER_ADDRESS_BASE_OCTET = 1
 RENDERER_PORT = 5001
-RENDERER_CONNECT_TIMEOUT_SECS = 5.0
-MAXIMUM_RENDERER_CONNECT_RETRIES = 05 
+RENDERER_CONNECT_TIMEOUT_SECS = 2.0
+MAXIMUM_RENDERER_CONNECT_RETRIES = 10 
 
 class CellState(object):
     CHANGE_RECEDE_SLOW = "r"
@@ -29,9 +29,21 @@ class CellState(object):
 class CellUpdate(object):
     def __init__(self, cell_state, coords):
       """state, (x,y)."""
-      self.x = coords[0]
-      self.y = coords[1]
-      self.state = cell_state
+      self._x = coords[0]
+      self._y = coords[1]
+      self._state = cell_state
+
+    @property
+    def state(self):
+      return self._state
+
+    @property
+    def x(self):
+      return self._x
+
+    @property
+    def y(self):
+      return self._y
 
     @staticmethod
     def seriesToText(cellSeries):
@@ -49,4 +61,4 @@ class CellUpdate(object):
 	return None
 
     def asText(self):
-      return self.state+","+str(self.x)+","+str(self.y)
+      return self._state+","+str(self._x)+","+str(self._y)

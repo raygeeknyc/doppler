@@ -16,7 +16,7 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = 3.0
+TARGET_FPS = 2
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -99,6 +99,7 @@ class Stitcher(object):
 			self.getSensorDepthMap(self._kinect_left)
 			self.getSensorDepthMap(self._kinect_center)
 			self.getSensorDepthMap(self._kinect_right)
+			logging.debug("done")
 		else:
 			logging.debug("Getting 3 dummy depth maps")
 			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = getDummyDepthMap()
@@ -186,7 +187,7 @@ while True:
 	stitcher.plotter.refreshCells()
 	logging.debug("Refresh took %f secs" % (time.time() - now))
 	frequency = time.time() - start
-	if frequency < _MAX_REFRESH_FREQUENCY:
-		time.sleep((_MAX_REFRESH_FREQUENCY - frequency))
+        if frequency < _MAX_REFRESH_FREQUENCY:                                  
+                time.sleep((_MAX_REFRESH_FREQUENCY - frequency))                
 	frequency = time.time() - start
 	logging.debug("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
