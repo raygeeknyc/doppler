@@ -22,8 +22,9 @@ _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
+SAMPLER = None
 #SAMPLER = numpy.mean
-SAMPLER = numpy.median
+#SAMPLER = numpy.median
 
 # The number of pixels to cut out of the right side of the left sensor's map
 LEFT_SENSOR_MARGIN = 80
@@ -134,6 +135,21 @@ class Stitcher(object):
 		spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, int(spot_depth))
+		elif SAMPLER == None:
+			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
+			if not SAMPLE_FULL_AREA:  # Look for a reading in the center column
+				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
+				for spot_row in range(spot_row_start, spot_row_end):
+					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
+					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
+						return (1, int(sample))
+			else:  # Look for a reading in the entire mapped cell
+				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
+				for spot_subcol in range(spot_col_start, spot_col_end):
+					for spot_subrow in range(spot_row_start, spot_row_end):
+						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
+							return (1, int(sample))
 		else:  # Use a sampler
 			self._samples_for_cell.clear()
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
@@ -150,11 +166,11 @@ class Stitcher(object):
 						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							self._samples_for_cell.append(sample)
-			# If we had no "good" samples, we may have a legit "MAX" sensor reading.
-			if len(self._samples_for_cell) == 0:
-				return (1, self.MAXIMUM_SENSOR_DEPTH_READING)
-			spot_depth = int(SAMPLER(self._samples_for_cell))
-			return (len(self._samples_for_cell), spot_depth)
+		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
+		if len(self._samples_for_cell) == 0:
+			return (1, self.MAXIMUM_SENSOR_DEPTH_READING)
+		spot_depth = int(SAMPLER(self._samples_for_cell))
+		return (len(self._samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):
 		self.getSensorDepthMaps()
@@ -166,7 +182,6 @@ class Stitcher(object):
 		self.COLUMN_SCALING_FACTOR = float(STITCHED_COLUMNS + 1) / (self.plotter.COLUMNS + 1)
 		# The ratio of stitched sensor input height to plotter point height, known to be > 1.0
 		self.ROW_SCALING_FACTOR = float(STITCHED_ROWS + 1) / (self.plotter.ROWS + 1)
-
 		typical_distance = self.calculateMergedDepth(self.plotter.COLUMNS / 2, self.plotter.ROWS / 2)[1]
 		logging.debug("initial distance %s" % str(typical_distance))
 		logging.info("x,y sensor:display scaling factor %f,%f" % (self.COLUMN_SCALING_FACTOR, self.ROW_SCALING_FACTOR))
