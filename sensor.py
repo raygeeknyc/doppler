@@ -133,7 +133,7 @@ class Stitcher(object):
 		spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, int(spot_depth))
-		elif SAMPLER == None:
+		elif SAMPLER == None:  # Take the first non MAX reading in this cell
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 			if not SAMPLE_FULL_AREA:  # Look for a reading in the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
@@ -148,7 +148,7 @@ class Stitcher(object):
 						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							return (1, int(sample))
-		else:  # Use a sampler
+		else:  # Use a sampler to average the readings in this cell
 			self._samples_for_cell.clear()
 			spot_row_end = spot_row_start + int(self.ROW_SCALING_FACTOR) + 1
 			if not SAMPLE_FULL_AREA:  # Sample the center column
