@@ -140,7 +140,7 @@ class Plotter:
 
     def _sendUpdatesForZone(self, zone, cellStates):
 	"Send the cellStates to the server at (zone) if we have an address for it."
-	if len(cellStates) > 0:
+	if len(cellStates):
 		#logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
 		start = time.time()
 		renderer = self._getRendererAddress(zone[0], zone[1])

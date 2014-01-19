@@ -165,7 +165,7 @@ class Stitcher(object):
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							self._samples_for_cell.append(sample)
 		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
-		if len(self._samples_for_cell) == 0:
+		if not len(self._samples_for_cell):
 			return (1, self.MAXIMUM_SENSOR_DEPTH_READING)
 		spot_depth = int(SAMPLER(self._samples_for_cell))
 		return (len(self._samples_for_cell), spot_depth)
