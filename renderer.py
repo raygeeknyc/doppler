@@ -158,16 +158,15 @@ class App:
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
 	while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
-		idleExpiredTime, idleUpdates = self._agingUpdates.popleft()
-
-		for idleUpdate in idleUpdates:
-			pygame.draw.rect(self._surface, stillColor, (idleUpdate.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, idleUpdate.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+		idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
+		pygame.draw.rect(self._surface, stillColor, (idleUpdate.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, idleUpdate.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
 	while len(self._changedCells):
 	    cellToRefresh = self._changedCells.popleft()
 	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, cellToRefresh.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
+	    self._agingUpdates.append((start, cellToRefresh))
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
@@ -212,7 +211,6 @@ class App:
 		for cellUpdate in updates:
       			self._cells[cellUpdate.x][cellUpdate.y].color = App._colorForState(cellUpdate.state)
 		      	self._changedCells.append(self._cells[cellUpdate.x][cellUpdate.y])
-		self._agingUpdates.append((now, updates))
 
     def refresh(self):
 	self.updateCells()
