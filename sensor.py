@@ -29,7 +29,7 @@ SAMPLER = None
 # The number of pixels to cut out of the right side of the left sensor's map
 LEFT_SENSOR_MARGIN = 80
 # The number of pixels to cut out of the right side of the center sensor's map
-CENTER_SENSOR_MARGIN = 150
+CENTER_SENSOR_MARGIN = 80
 # The number of pixels to cut out of the right side of the right sensor's map
 RIGHT_SENSOR_MARGIN = 7
 # The known width of a sensor's depth map
