@@ -26,6 +26,10 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 CELL_IDLE_TIME = 2.0  # Set cells to idle after this many secs of inactivity
 
 MAINLOOP_DELAY = 0.01  # Dirty way to avoid starving our request thread
+
+# The maximum number of idle cells to age when there are pending updates
+MAX_AGED_PER_REDRAW = 900
+
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
     return (usage[2]*resource.getpagesize())/1048576.0
@@ -157,9 +161,13 @@ class App:
 
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
+	cells_aged = 0
 	while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
+		if ((cells_aged > MAX_AGED_PER_REDRAW) and len(self._changedCells)):
+			break
 		idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
 		pygame.draw.rect(self._surface, stillColor, (idleUpdate.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, idleUpdate.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+		cells_aged += 1
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
