@@ -38,15 +38,15 @@ def getPort():
 	return update_message.RENDERER_PORT
 
 class PixelBlock:
-    CELL_WIDTH = 10  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 10  # This is a Pixels vertical pitch
+    CELL_WIDTH = 13  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 13  # This is a Pixels vertical pitch
     CELL_MARGIN = 03  # This is the padding within a Pixel
     CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
     def __init__(self, left, top):
-      self.x = left
-      self.y = top
+      self.plot_x = left * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN
+      self.plot_y = top * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN
       self.color = _NEUTRAL_COLOR
 
 _BRIGHTRED = (255,50,50)
@@ -119,7 +119,6 @@ class App:
 		logging.exception("Error shutting down data socket")
 
 	try:
-		if self._configSocket:
 			logging.debug("Closing config socket")
 			self._configSocket.close()
 	except:
@@ -166,14 +165,14 @@ class App:
 		if ((cells_aged > MAX_AGED_PER_REDRAW) and len(self._changedCells)):
 			break
 		idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
-		pygame.draw.rect(self._surface, stillColor, (idleUpdate.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, idleUpdate.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+		pygame.draw.rect(self._surface, stillColor, (idleUpdate.plot_x, idleUpdate.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
 		cells_aged += 1
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
 	while len(self._changedCells):
 	    cellToRefresh = self._changedCells.popleft()
-	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN, cellToRefresh.y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
+	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
 	    self._agingUpdates.append((start, cellToRefresh))
 	App.redraw_time_consumption = (time.time() - start)
 
@@ -223,10 +222,10 @@ class App:
     def refresh(self):
 	self.updateCells()
 	self.redraw()
-	#logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	#logging.info("update recv time: %f" % App.update_time_consumption)
-	#logging.info("idle cell plot time: %f" % App.idle_time_consumption)
-	#logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
+	logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	logging.info("update recv time: %f" % App.update_time_consumption)
+	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
+	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
 	pygame.display.update()
 
 
@@ -243,7 +242,7 @@ class App:
 	self._requestThread.start()
 
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 
 pygame.init()
 pygame.mouse.set_visible(False)
