@@ -16,7 +16,7 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = 2
+TARGET_FPS = 1.0
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -29,7 +29,7 @@ SAMPLER = None
 # The number of pixels to cut out of the right side of the left sensor's map
 LEFT_SENSOR_MARGIN = 80
 # The number of pixels to cut out of the right side of the center sensor's map
-CENTER_SENSOR_MARGIN = 80
+CENTER_SENSOR_MARGIN = 150
 # The number of pixels to cut out of the right side of the right sensor's map
 RIGHT_SENSOR_MARGIN = 7
 # The known width of a sensor's depth map

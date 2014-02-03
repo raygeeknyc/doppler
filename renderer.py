@@ -161,9 +161,7 @@ class App:
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
 	cells_aged = 0
-	while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:
-		if ((cells_aged > MAX_AGED_PER_REDRAW) and len(self._changedCells)):
-			break
+	while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start and not (cells_aged > MAX_AGED_PER_REDRAW and len(self._changedCells)):
 		idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
 		pygame.draw.rect(self._surface, stillColor, (idleUpdate.plot_x, idleUpdate.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
 		cells_aged += 1
@@ -222,10 +220,10 @@ class App:
     def refresh(self):
 	self.updateCells()
 	self.redraw()
-	logging.info("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	logging.info("update recv time: %f" % App.update_time_consumption)
-	logging.info("idle cell plot time: %f" % App.idle_time_consumption)
-	logging.info("updated cell plot time: %f" % App.redraw_time_consumption)
+	#logging.debug("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	#logging.debug("update recv time: %f" % App.update_time_consumption)
+	#logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
+	#logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
 	pygame.display.update()
 
 
@@ -242,7 +240,7 @@ class App:
 	self._requestThread.start()
 
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 pygame.init()
 pygame.mouse.set_visible(False)
