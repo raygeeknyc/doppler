@@ -8,6 +8,7 @@ import select
 import socket
 import string
 import time
+import zlib
 
 # The minimum change in distance that is seen as a "fast" approach or recession
 FAST_APPROACH_THRESHOLD = 80
@@ -19,9 +20,10 @@ SLOW_RECEDE_THRESHOLD = -30
 DISTANCE_MOTION_THRESHOLD = 20
 
 # How many cell updates to send in one message to a renderer
-MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
+#MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
+MAXIMUM_CELL_UPDATES_PER_MESSAGE = 700  # This should be < 1400 bytes
 
-# We have 4 columns and 2 rows 
+# We have 4 columns and 2 rows
 #ZONES=[1,1]
 ZONES=[4,2]
 RENDERER_CONFIG_MAX_LENGTH = 512
@@ -39,8 +41,8 @@ class Plotter:
 	return update_message.CellState.CHANGE_REST
 	
     def updateCellState(self, x, y, distance):
-	delta = (self._cells[x][y][0]) - distance
-	if (abs(delta) >= DISTANCE_MOTION_THRESHOLD):
+	delta = self._cells[x][y][0] - distance
+	if abs(delta) >= DISTANCE_MOTION_THRESHOLD:
 		self._cells[x][y][1] = self.cellStateForChange(delta)
 		self._cells[x][y][0] = distance
 		self._cells[x][y][2] = True
@@ -163,7 +165,7 @@ class Plotter:
 	#logging.debug("Sending %d characters for %d updates" % (len(seriesText), len(cellStates)))
 	#logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
 	try:
-		self._updateSocket.sendto(seriesText, (renderer, update_message.RENDERER_PORT))
+		self._updateSocket.sendto(zlib.compress(seriesText, 9), (renderer, update_message.RENDERER_PORT))
 	except:
 		logging.exception("Error sending to '%s'" % renderer)
 

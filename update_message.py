@@ -1,5 +1,3 @@
-import string
-
 RENDERER_ADDRESS_BASE = "192.168.1."  # beaglexm
 RENDERER_ADDRESS_BASE_OCTET = 101     # beaglexm0
 #RENDERER_ADDRESS_BASE = "192.168.0."  # dweeno
@@ -47,8 +45,7 @@ class CellUpdate(object):
 
     @staticmethod
     def seriesToText(cellSeries):
-	textUpdates = [cellUpdate.asText() for cellUpdate in cellSeries]
-	return string.join(textUpdates,"|")
+        return "|".join(str(cellUpdate) for cellUpdate in cellSeries)
 	  
     @staticmethod
     def fromText(text_update):
@@ -60,5 +57,5 @@ class CellUpdate(object):
 	print "Error parsing text: %s" % str(e)
 	return None
 
-    def asText(self):
-      return self._state+","+str(self._x)+","+str(self._y)
+    def __str__(self):
+      return "{},{},{}".format(self._state, self._x, self._y)

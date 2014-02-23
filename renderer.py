@@ -14,6 +14,7 @@ import signal
 import socket
 import string
 import sys
+import zlib
 
 if len(sys.argv) > 1 and sys.argv[1] == "debug":
 	DEBUG_DISPLAY=True
@@ -45,9 +46,12 @@ class PixelBlock:
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
     def __init__(self, left, top):
+      self.col = left
+      self.row = top
       self.plot_x = left * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN
       self.plot_y = top * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN
       self.color = _NEUTRAL_COLOR
+      self.ttl = time.time() + CELL_IDLE_TIME
 
 _BRIGHTRED = (255,50,50)
 _BRIGHTBLUE = (50,50,255)
@@ -81,8 +85,8 @@ class App:
     def __init__(self, info, surface):
         self._surface = surface
         self._display_info = info
-        self._screen_width = displayInfo.current_w
-        self._screen_height = displayInfo.current_h
+        self._screen_width = info.current_w
+        self._screen_height = info.current_h
         logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
@@ -94,7 +98,7 @@ class App:
 	self.setAllCellsRandomly()
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
-	self.startRequestService()
+	#self.startRequestService()
 
     def initializeSockets(self):
 	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -128,29 +132,26 @@ class App:
 
     def initializeCells(self):
         """Set up the cells, no color set."""
-        self._cells = []
-        for col in range(0, self._cols):
-          col_cells = []
-          for row in range(0, self._rows):
-            col_cells.append(PixelBlock(col, row))
-          self._cells.append(col_cells)
+	self._cells = [[PixelBlock(col, row)
+			for row in xrange(self._rows)]
+		       for col in xrange(self._cols)]
 
     def _dumpCells(self):
-        for col in range(0, self._cols):
-          for row in range(0, self._rows):
+        for col in xrange(0, self._cols):
+          for row in xrange(0, self._rows):
 	    if self._cells[col][row].color != App._colorForState(update_message.CellState.CHANGE_STILL):
 	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].color))
 
     def setAllCellsRandomly(self):
         logging.debug("Setting all cells to random colors")
-	updateData = ""
+	updateData = []
 
-        for row in range(0, self._rows):
-          for col in range(0, self._cols):
-	      updateData += (update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)]+
-                ","+str(col)+","+str(row)+"|")
-	updateData = updateData[:-1]
-	cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData.split("|")]
+        for row in xrange(0, self._rows):
+          for col in xrange(0, self._cols):
+	      updateData.append("{},{},{}".format(
+			      update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)],
+			      col, row))
+	cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData]
         self._cellUpdates.append(cellUpdates)
   
     def redraw(self):                          
@@ -160,18 +161,31 @@ class App:
 
 	start = time.time()
 	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-	cells_aged = 0
-	while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start and not (cells_aged > MAX_AGED_PER_REDRAW and len(self._changedCells)):
-		idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
-		pygame.draw.rect(self._surface, stillColor, (idleUpdate.plot_x, idleUpdate.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
-		cells_aged += 1
+	self._surface.lock()
+	# cells_aged = 0
+	# while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:# and not (cells_aged > MAX_AGED_PER_REDRAW and len(self._changedCells)):
+	# 	idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
+	# 	if self._cells[idleUpdate.col][idleUpdate.row].ttl < start:
+	# 		pygame.draw.rect(self._surface, stillColor, (idleUpdate.plot_x, idleUpdate.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+	# 		self._cells[idleUpdate.col][idleUpdate.row].ttl += CELL_IDLE_TIME
+	# 	cells_aged += 1
+	for x in xrange(len(self._cells)):
+		for y in xrange(len(self._cells[x])):
+			if self._cells[x][y].ttl < start:
+				pygame.draw.rect(self._surface, stillColor, (x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
+									     y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
+									     PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+				self._cells[x][y].ttl += CELL_IDLE_TIME
+			
+			
 	App.idle_time_consumption = (time.time() - start)
 
 	start = time.time()
-	while len(self._changedCells):
-	    cellToRefresh = self._changedCells.popleft()
+	for cellToRefresh in self._changedCells:
 	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
-	    self._agingUpdates.append((start, cellToRefresh))
+	    #self._agingUpdates.append((start, cellToRefresh))
+	self._changedCells.clear()
+	self._surface.unlock()
 	App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
@@ -192,7 +206,7 @@ class App:
 	if not connection:
 		logging.error("No connection.")
 		return
-	connection.send(str(self._cols)+","+str(self._rows))
+	connection.send("{},{}".format(self._cols, self._rows))
 
     def getCellUpdates(self):
 	start = time.time()
@@ -201,6 +215,7 @@ class App:
 		logging.error("No data socket")
 	try:
 		updateData, addr = self._dataSocket.recvfrom(MAXIMUM_UPDATE_MESSAGE_LEN)
+		updateData = zlib.decompress(updateData)
 	except:
 		#TODO: distinguish between resource not available and "real" errors
 		pass
@@ -211,20 +226,24 @@ class App:
 
     def updateCells(self):
 	now = time.time()
-	while len(self._cellUpdates):
-		updates = self._cellUpdates.popleft()
+	for updates in self._cellUpdates:
 		for cellUpdate in updates:
       			self._cells[cellUpdate.x][cellUpdate.y].color = App._colorForState(cellUpdate.state)
+      			self._cells[cellUpdate.x][cellUpdate.y].ttl = now + CELL_IDLE_TIME
 		      	self._changedCells.append(self._cells[cellUpdate.x][cellUpdate.y])
+	self._cellUpdates.clear()
 
     def refresh(self):
 	self.updateCells()
 	self.redraw()
-	#logging.debug("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
-	#logging.debug("update recv time: %f" % App.update_time_consumption)
-	#logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
-	#logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
+	logging.debug("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	logging.debug("update recv time: %f" % App.update_time_consumption)
+	logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
+	logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
 	pygame.display.update()
+	for _ in xrange(10):
+		self.getCellUpdates()
+	self.getConfigRequest()
 
 
     def getRequests(self):
@@ -239,30 +258,35 @@ class App:
 	self._requestThread.daemon = True
 	self._requestThread.start()
 
+def main(argv=[]):	
+	logging.getLogger().setLevel(logging.DEBUG)
 
-logging.getLogger().setLevel(logging.INFO)
+	pygame.init()
+	pygame.mouse.set_visible(False)
 
-pygame.init()
-pygame.mouse.set_visible(False)
+	displayInfo = pygame.display.Info()
+	if DEBUG_DISPLAY:
+		displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
+	else:
+		displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
 
-displayInfo = pygame.display.Info()
-if DEBUG_DISPLAY:
-	displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h))
-else:
-	displaySurface = pygame.display.set_mode((displayInfo.current_w, displayInfo.current_h), pygame.FULLSCREEN)
+	def quit_handler(signal, frame):
+		logging.info("Interrupted")
+		a.finish()
 
-def quit_handler(signal, frame):
-	logging.info("Interrupted")
+	signal.signal(signal.SIGINT, quit_handler)
+
+	a = App(displayInfo, displaySurface)  
+	while True:
+		try:
+			a.refresh()
+			time.sleep(MAINLOOP_DELAY)
+		except Exception as e:
+			logging.exception("Top level exception")
+			a.finish()
 	a.finish()
 
-signal.signal(signal.SIGINT, quit_handler)
 
-a = App(displayInfo, displaySurface)  
-while True:
-	try:
-		a.refresh()
-		time.sleep(MAINLOOP_DELAY)
-	except Exception as e:
-		logging.exception("Top level exception")
-		a.finish()
-a.finish()
+
+if __name__ == "__main__":
+	main()

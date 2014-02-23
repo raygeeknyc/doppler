@@ -16,7 +16,7 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = 1.0
+TARGET_FPS = 10.0
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -53,11 +53,14 @@ TEST_FARTHEST_DISTANCE = 2040
 
 
 def getDummyDepthMap():
-	dummy_map = []
-	for col in range(0, SENSOR_COLUMNS):
-		dummy_map.append([])
-		for row in range(0, SENSOR_ROWS):
-			dummy_map[col].append(random.randrange(TEST_CLOSEST_DISTANCE, TEST_FARTHEST_DISTANCE))
+	start = time.time()
+	#dummy_map = [[None] * SENSOR_ROWS for _ in xrange(SENSOR_COLUMNS)]
+	# dummy_map = numpy.zeros((SENSOR_COLUMNS, SENSOR_ROWS))
+	# for col in xrange(0, SENSOR_COLUMNS):
+	# 	dummy_col = dummy_map[col]
+	# 	for row in xrange(0, SENSOR_ROWS):
+	# 		dummy_col[row] = random.randint(TEST_CLOSEST_DISTANCE, TEST_FARTHEST_DISTANCE)
+	dummy_map = numpy.random.random((SENSOR_COLUMNS, SENSOR_ROWS)) * (TEST_FARTHEST_DISTANCE - TEST_CLOSEST_DISTANCE) + TEST_CLOSEST_DISTANCE
 	return dummy_map, time.time()
 			
 class Stitcher(object):
@@ -115,9 +118,9 @@ class Stitcher(object):
 		It should be OK to flip at this coarse level as we are averaging the sensor points around a given cell so the orientation
 		within a cell's sensor cells should not matter.
 		"""
-		for spot_col in range(0, self.plotter.COLUMNS):
+		for spot_col in xrange(self.plotter.COLUMNS):
 			flipped_col = self.COL_LIMIT - spot_col
-			for spot_row in range(0, self.plotter.ROWS):
+			for spot_row in xrange(self.plotter.ROWS):
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 					self.plotter.updateCellState(spot_col, spot_row, spot_depth)
@@ -186,21 +189,26 @@ class Stitcher(object):
 		self.plotter.setAllCellDistances(typical_distance)
 		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
-logging.getLogger().setLevel(logging.INFO)
-logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
-logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
-logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
-stitcher=Stitcher(0,1,2,0,0,testing=False)
-stitcher.initPlotter()
-while True:
-	start = time.time()
-	stitcher.updateDepthMaps()
-	logging.debug("Update took %f secs" % (time.time() - start))
-	now = time.time()
-	stitcher.plotter.refreshCells()
-	logging.debug("Refresh took %f secs" % (time.time() - now))
-	frequency = time.time() - start
-        if frequency < _MAX_REFRESH_FREQUENCY:                                  
-                time.sleep((_MAX_REFRESH_FREQUENCY - frequency))                
-	frequency = time.time() - start
-	logging.debug("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
+def main(argv):
+	logging.getLogger().setLevel(logging.INFO)
+	logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
+	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
+	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
+	testing = True if len(argv) >= 1 and argv[1] == "debug" else False
+	stitcher=Stitcher(0,1,2,0,0,testing=testing)
+	stitcher.initPlotter()
+	while True:
+		start = time.time()
+		stitcher.updateDepthMaps()
+		logging.debug("Update took %f secs" % (time.time() - start))
+		now = time.time()
+		stitcher.plotter.refreshCells()
+		logging.debug("Refresh took %f secs" % (time.time() - now))
+		frequency = time.time() - start
+		if frequency < _MAX_REFRESH_FREQUENCY:                                  
+			time.sleep((_MAX_REFRESH_FREQUENCY - frequency))                
+		frequency = time.time() - start
+		logging.debug("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
+
+if __name__ == "__main__":
+	main(sys.argv)
