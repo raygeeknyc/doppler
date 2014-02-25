@@ -148,7 +148,7 @@ class App:
 
         for row in xrange(0, self._rows):
           for col in xrange(0, self._cols):
-	      updateData.append("{},{},{}".format(
+	      updateData.append("{0},{1},{2}".format(
 			      update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)],
 			      col, row))
 	cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData]
@@ -206,7 +206,7 @@ class App:
 	if not connection:
 		logging.error("No connection.")
 		return
-	connection.send("{},{}".format(self._cols, self._rows))
+	connection.send("{0},{1}".format(self._cols, self._rows))
 
     def getCellUpdates(self):
 	start = time.time()

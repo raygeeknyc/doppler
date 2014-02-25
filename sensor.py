@@ -16,7 +16,7 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = 10.0
+TARGET_FPS = 1.5
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -194,7 +194,7 @@ def main(argv):
 	logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
-	testing = True if len(argv) >= 1 and argv[1] == "debug" else False
+	testing = len(argv) > 1 and argv[1] == "debug"
 	stitcher=Stitcher(0,1,2,0,0,testing=testing)
 	stitcher.initPlotter()
 	while True:
@@ -208,7 +208,7 @@ def main(argv):
 		if frequency < _MAX_REFRESH_FREQUENCY:                                  
 			time.sleep((_MAX_REFRESH_FREQUENCY - frequency))                
 		frequency = time.time() - start
-		logging.debug("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
+		logging.info("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
 
 if __name__ == "__main__":
 	main(sys.argv)
