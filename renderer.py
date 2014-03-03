@@ -22,7 +22,7 @@ else:
 	DEBUG_DISPLAY=False
 
 HOST = ''  # Symbolic name meaning the local host
-MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
+MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
 CELL_IDLE_TIME = 1.3  # Set cells to idle after this many secs of inactivity, this is roughly 2 frames
 
@@ -96,7 +96,6 @@ class App:
 	self.setAllCellsRandomly()
 	logging.debug("Initial cell states set")
 	self.initializeSockets()
-	#self.startRequestService()
 
     def initializeSockets(self):
 	self._dataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -239,22 +238,9 @@ class App:
 	logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
 	logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
 	pygame.display.update()
-	for _ in xrange(10):
+	for _ in xrange(20):
 		self.getCellUpdates()
 	self.getConfigRequest()
-
-
-    def getRequests(self):
-	logging.debug("In request thread")
-	while True:
-		self.getCellUpdates()
-		self.getConfigRequest()
-
-    def startRequestService(self):
-	logging.info("Starting request thread")
-	self._requestThread = threading.Thread(target=self.getRequests, name="requests")
-	self._requestThread.daemon = True
-	self._requestThread.start()
 
 def main(argv=[]):	
 	logging.getLogger().setLevel(logging.DEBUG)
