@@ -24,9 +24,7 @@ else:
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 3*1024
 
-CELL_IDLE_TIME = 2.0  # Set cells to idle after this many secs of inactivity
-
-MAINLOOP_DELAY = 0.01  # Dirty way to avoid starving our request thread
+CELL_IDLE_TIME = 1.3  # Set cells to idle after this many secs of inactivity, this is roughly 2 frames
 
 # The maximum number of idle cells to age when there are pending updates
 MAX_AGED_PER_REDRAW = 900
@@ -280,7 +278,6 @@ def main(argv=[]):
 	while True:
 		try:
 			a.refresh()
-			time.sleep(MAINLOOP_DELAY)
 		except Exception as e:
 			logging.exception("Top level exception")
 			a.finish()

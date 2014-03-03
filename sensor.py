@@ -16,7 +16,7 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = 1.5
+TARGET_FPS = 1.6
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
