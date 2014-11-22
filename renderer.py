@@ -1,4 +1,4 @@
-"Install tcl tk python-modules pygame."
+"apt-get install tcl tk python-pygame"
 
 import collections
 import logging
@@ -243,7 +243,7 @@ class App:
 	self.getConfigRequest()
 
 def main(argv=[]):	
-	logging.getLogger().setLevel(logging.DEBUG)
+	logging.getLogger().setLevel(logging.INFO)
 
 	pygame.init()
 	pygame.mouse.set_visible(False)
