@@ -88,8 +88,8 @@ class App:
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
-	self._cellUpdates = collections.deque()
-        self._changedCells = collections.deque()
+	self._cellUpdates = []
+        self._changedCells = []
         self.initializeCells()
 	self.setAllCellsRandomly()
 	logging.debug("Initial cell states set")
@@ -171,7 +171,7 @@ class App:
         start = time.time()
         for cellToRefresh in self._changedCells:
             pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
-        self._changedCells.clear()
+        self._changedCells = []
         self._surface.unlock()
         App.redraw_time_consumption = (time.time() - start)
 
@@ -219,7 +219,7 @@ class App:
       		self._cells[x][y].color = App._colorForState(cellUpdate.state)
       		self._cells[x][y].ttl = expire
 	      	self._changedCells.append(self._cells[x][y])
-	self._cellUpdates.clear()
+	self._cellUpdates = []
 
     def refresh(self):
 	self.updateCells()
