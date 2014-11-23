@@ -6,7 +6,6 @@ import pygame
 from pygame.locals import *
 import update_message
 import time
-import threading
 import random
 import resource
 import select
@@ -43,13 +42,13 @@ class PixelBlock:
     CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
-    def __init__(self, left, top):
+    def __init__(self, left, top, when):
       self.col = left
       self.row = top
       self.plot_x = left * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN
       self.plot_y = top * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN
       self.color = _NEUTRAL_COLOR
-      self.ttl = time.time() + CELL_IDLE_TIME
+      self.ttl = when
 
 _BRIGHTRED = (255,50,50)
 _BRIGHTBLUE = (50,50,255)
@@ -90,7 +89,6 @@ class App:
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
 	self._cellUpdates = collections.deque()
-        self._agingUpdates = collections.deque()
         self._changedCells = collections.deque()
         self.initializeCells()
 	self.setAllCellsRandomly()
@@ -129,13 +127,14 @@ class App:
 
     def initializeCells(self):
         """Set up the cells, no color set."""
-	self._cells = [[PixelBlock(col, row)
+        expire = time.time() + CELL_IDLE_TIME
+	self._cells = [[PixelBlock(col, row, expire)
 			for row in xrange(self._rows)]
 		       for col in xrange(self._cols)]
 
     def _dumpCells(self):
-        for col in xrange(0, self._cols):
-          for row in xrange(0, self._rows):
+        for col in xrange(self._cols):
+          for row in xrange(self._rows):
 	    if self._cells[col][row].color != App._colorForState(update_message.CellState.CHANGE_STILL):
 	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].color))
 
@@ -143,47 +142,38 @@ class App:
         logging.debug("Setting all cells to random colors")
 	updateData = []
 
-        for row in xrange(0, self._rows):
-          for col in xrange(0, self._cols):
+        for row in xrange(self._rows):
+          for col in xrange(self._cols):
 	      updateData.append("{0},{1},{2}".format(
 			      update_message.CellState.STATES[random.randint(0,len(update_message.CellState.STATES)-1)],
 			      col, row))
-	cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData]
-        self._cellUpdates.append(cellUpdates)
+        for cellMessage in updateData:
+          self._cellUpdates.append(update_message.CellUpdate.fromText(cellMessage))
   
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
-	App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
+        App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
         App.redraw_cycle_timestamp = time.time()
 
-	start = time.time()
-	stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-	self._surface.lock()
-	# cells_aged = 0
-	# while len(self._agingUpdates) and (self._agingUpdates[0][0] + CELL_IDLE_TIME) < start:# and not (cells_aged > MAX_AGED_PER_REDRAW and len(self._changedCells)):
-	# 	idleExpiredTime, idleUpdate = self._agingUpdates.popleft()
-	# 	if self._cells[idleUpdate.col][idleUpdate.row].ttl < start:
-	# 		pygame.draw.rect(self._surface, stillColor, (idleUpdate.plot_x, idleUpdate.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
-	# 		self._cells[idleUpdate.col][idleUpdate.row].ttl += CELL_IDLE_TIME
-	# 	cells_aged += 1
-	for x in xrange(len(self._cells)):
-		for y in xrange(len(self._cells[x])):
-			if self._cells[x][y].ttl < start:
-				pygame.draw.rect(self._surface, stillColor, (x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
-									     y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
-									     PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
-				self._cells[x][y].ttl += CELL_IDLE_TIME
-			
-			
-	App.idle_time_consumption = (time.time() - start)
+        start = time.time()
+        stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
+        self._surface.lock()
+        expire = start + CELL_IDLE_TIME
+        for x in xrange(len(self._cells)):
+            for y in xrange(len(self._cells[x])):
+                if self._cells[x][y].ttl < start:
+                    pygame.draw.rect(self._surface, stillColor, (x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
+                                     y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
+                                     PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+                    self._cells[x][y].ttl = expire
+        App.idle_time_consumption = (time.time() - start)
 
-	start = time.time()
-	for cellToRefresh in self._changedCells:
-	    pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
-	    #self._agingUpdates.append((start, cellToRefresh))
-	self._changedCells.clear()
-	self._surface.unlock()
-	App.redraw_time_consumption = (time.time() - start)
+        start = time.time()
+        for cellToRefresh in self._changedCells:
+            pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
+        self._changedCells.clear()
+        self._surface.unlock()
+        App.redraw_time_consumption = (time.time() - start)
 
     def getConfigRequest(self):
 	configConn = None
@@ -217,17 +207,18 @@ class App:
 		#TODO: distinguish between resource not available and "real" errors
 		pass
 	if updateData:
-		cellUpdates = [update_message.CellUpdate.fromText(cellMessage) for cellMessage in updateData.split("|")]
-		self._cellUpdates.append(cellUpdates)
+        	for cellMessage in updateData.split("|"):
+			self._cellUpdates.append(update_message.CellUpdate.fromText(cellMessage))
 	App.update_time_consumption = (time.time() - start)
 
     def updateCells(self):
 	now = time.time()
-	for updates in self._cellUpdates:
-		for cellUpdate in updates:
-      			self._cells[cellUpdate.x][cellUpdate.y].color = App._colorForState(cellUpdate.state)
-      			self._cells[cellUpdate.x][cellUpdate.y].ttl = now + CELL_IDLE_TIME
-		      	self._changedCells.append(self._cells[cellUpdate.x][cellUpdate.y])
+        expire = now + CELL_IDLE_TIME
+	for cellUpdate in self._cellUpdates:
+                x,y = cellUpdate.x, cellUpdate.y
+      		self._cells[x][y].color = App._colorForState(cellUpdate.state)
+      		self._cells[x][y].ttl = expire
+	      	self._changedCells.append(self._cells[x][y])
 	self._cellUpdates.clear()
 
     def refresh(self):
@@ -238,12 +229,11 @@ class App:
 	logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
 	logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
 	pygame.display.update()
-	for _ in xrange(20):
-		self.getCellUpdates()
+	self.getCellUpdates()
 	self.getConfigRequest()
 
 def main(argv=[]):	
-	logging.getLogger().setLevel(logging.INFO)
+	logging.getLogger().setLevel(logging.DEBUG)
 
 	pygame.init()
 	pygame.mouse.set_visible(False)
