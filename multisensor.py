@@ -18,7 +18,7 @@ import time
 import sensor
 
 # The maximum update frequency
-TARGET_FPS = 1.5
+TARGET_FPS = 3
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -64,12 +64,11 @@ class Stitcher(sensor.BaseStitcher):
 		# Get initial depth maps
 		self.getSensorDepthMaps()
 
-	def __init__(self, kinect_left_index, kinect_center_index, kinect_right_index, overlap_cols_margin_left, overlap_cols_margin_right, testing = True):
+	def __init__(self, kinect_left_index, kinect_center_index, kinect_right_index, testing = True):
 		self._kinect_left = kinect_left_index
 		self._kinect_center = kinect_center_index
 		self._kinect_right = kinect_right_index
-                super(Stitcher, self).__init__(overlap_cols_margin_left, overlap_cols_margin_right, testing)
-
+                super(Stitcher, self).__init__(testing)
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
@@ -184,7 +183,7 @@ def main(argv):
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 	testing = len(argv) > 1 and argv[1] == "debug"
 	testing = True
-	stitcher=Stitcher(0,1,2,0,0,testing=testing)
+	stitcher=Stitcher(0,1,2,testing=testing)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()

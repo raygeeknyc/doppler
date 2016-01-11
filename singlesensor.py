@@ -15,8 +15,10 @@ import plotter
 import sys
 import time
 
+import sensor
+
 # The maximum update frequency
-TARGET_FPS = 1.5
+TARGET_FPS = 4
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -26,63 +28,30 @@ SAMPLER = None
 #SAMPLER = numpy.median
 #SAMPLER = numpy.mean
 
-# The number of pixels to cut out of the right side of the left sensor's map
-LEFT_SENSOR_MARGIN = 80
-# The number of pixels to cut out of the right side of the center sensor's map
-CENTER_SENSOR_MARGIN = 150
-# The number of pixels to cut out of the right side of the right sensor's map
-RIGHT_SENSOR_MARGIN = 7
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map
 SENSOR_ROWS = 480
 
 # Precompute these for speed, we use them often
-LEFT_SENSOR_EDGE = SENSOR_COLUMNS - LEFT_SENSOR_MARGIN
-CENTER_SENSOR_EDGE = (LEFT_SENSOR_EDGE + SENSOR_COLUMNS) - CENTER_SENSOR_MARGIN
-RIGHT_SENSOR_EDGE = (CENTER_SENSOR_EDGE + SENSOR_COLUMNS) - RIGHT_SENSOR_MARGIN
-
-# The total number of columns in the stitched sensor maps
-STITCHED_COLUMNS = RIGHT_SENSOR_EDGE
-# The total number of rows in the stitched sensor maps
-STITCHED_ROWS = SENSOR_ROWS
 
 # When simulating Kinect sensor depths, these are the lower and upper bounds for random values
 TEST_CLOSEST_DISTANCE = 100
 TEST_FARTHEST_DISTANCE = 2040
 
+class Stitcher(sensor.BaseStitcher):
+	def _initializeDepthMaps(self):
+                super(Stitcher, self)._initializeDepthMaps()
 
-def getDummyDepthMap():
-	start = time.time()
-	#dummy_map = [[None] * SENSOR_ROWS for _ in xrange(SENSOR_COLUMNS)]
-	# dummy_map = numpy.zeros((SENSOR_COLUMNS, SENSOR_ROWS))
-	# for col in xrange(0, SENSOR_COLUMNS):
-	# 	dummy_col = dummy_map[col]
-	# 	for row in xrange(0, SENSOR_ROWS):
-	# 		dummy_col[row] = random.randint(TEST_CLOSEST_DISTANCE, TEST_FARTHEST_DISTANCE)
-	dummy_map = numpy.random.random((SENSOR_COLUMNS, SENSOR_ROWS)) * (TEST_FARTHEST_DISTANCE - TEST_CLOSEST_DISTANCE) + TEST_CLOSEST_DISTANCE
-	return dummy_map, time.time()
-			
-class Stitcher(object):
-	def __init__(self, kinect_left_index, kinect_center_index, kinect_right_index, overlap_cols_margin_left, overlap_cols_margin_right, testing = True):
-	
-		self._testing = testing
+		self._depth_map = []
 
-		self._kinect_left = kinect_left_index
-		self._kinect_center = kinect_center_index
-		self._kinect_right = kinect_right_index
-
-		self._depth_maps = [[], [], []]
-
-		self._depth_timestamps = [None, None, None]
+		self._depth_timestamps = [None]
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
-		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[self._kinect_left][0])
 
-		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[self._kinect_center]) ,len(self._depth_maps[self._kinect_center][0])))
-		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
-		self._samples_for_cell = collections.deque()  # This often created collection is stored as an attribute purely for performance
+	def __init__(self, testing = True):
+                super(Stitcher, self).__init__(testing)
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
@@ -105,9 +74,9 @@ class Stitcher(object):
 			self.getSensorDepthMap(self._kinect_right)
 		else:
 			logging.debug("Getting 3 dummy depth maps")
-			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = getDummyDepthMap()
-			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = getDummyDepthMap()
-			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = getDummyDepthMap()
+			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = sensor.getDummyDepthMap()
+			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = sensor.getDummyDepthMap()
+			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = sensor.getDummyDepthMap()
 		logging.debug("Got 3 maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self):
@@ -180,9 +149,9 @@ class Stitcher(object):
 	def initPlotter(self):
 		self.plotter = plotter.Plotter()
 		# The ratio of stitched sensor input width to plotter point width, known to be > 1.0
-		self.COLUMN_SCALING_FACTOR = float(STITCHED_COLUMNS + 1) / (self.plotter.COLUMNS + 1)
+		self.COLUMN_SCALING_FACTOR = float(SENSOR_COLUMNS + 1) / (self.plotter.COLUMNS + 1)
 		# The ratio of stitched sensor input height to plotter point height, known to be > 1.0
-		self.ROW_SCALING_FACTOR = float(STITCHED_ROWS + 1) / (self.plotter.ROWS + 1)
+		self.ROW_SCALING_FACTOR = float(SENSOR_ROWS + 1) / (self.plotter.ROWS + 1)
 		typical_distance = self.calculateMergedDepth(self.plotter.COLUMNS / 2, self.plotter.ROWS / 2)[1]
 		logging.debug("initial distance %s" % str(typical_distance))
 		logging.info("x,y sensor:display scaling factor %f,%f" % (self.COLUMN_SCALING_FACTOR, self.ROW_SCALING_FACTOR))
@@ -190,12 +159,14 @@ class Stitcher(object):
 		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
 def main(argv):
+	print("multisensor:main()")
 	logging.getLogger().setLevel(logging.INFO)
 	logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
-	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
+	logging.info("SENSOR_COLUMNS, SENSOR_ROWS = %d, %d" % (SENSOR_COLUMNS, SENSOR_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 	testing = len(argv) > 1 and argv[1] == "debug"
-	stitcher=Stitcher(0,1,2,0,0,testing=testing)
+	testing = True
+	stitcher=Stitcher(testing=testing)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()
@@ -212,3 +183,4 @@ def main(argv):
 
 if __name__ == "__main__":
 	main(sys.argv)
+main(sys.argv)

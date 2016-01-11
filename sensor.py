@@ -45,7 +45,7 @@ class BaseStitcher(object):
 	def _initializeDepthMaps(self):
                 pass
 
-	def __init__(self, overlap_cols_margin_left, overlap_cols_margin_right, testing = True):
+	def __init__(self, testing = True):
 	
 		self._testing = testing
 		self._initializeDepthMaps()
