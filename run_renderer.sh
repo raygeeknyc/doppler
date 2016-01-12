@@ -1,5 +1,7 @@
 #!/bin/bash
-export DISPLAY=":0.0"
+if [[ -z "${DISPLAY}" ]];then
+  export DISPLAY=":0.0"
+fi
 /usr/bin/xset -dpms
 killall -9 python
 while true;do
