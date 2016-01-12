@@ -4,6 +4,7 @@
 "Test with import sensor;reload(sensor)"
 
 import collections
+import config
 import copy
 import errno
 from itertools import chain
@@ -178,11 +179,10 @@ class Stitcher(sensor.BaseStitcher):
 def main(argv):
 	print("multisensor:main()")
 	logging.getLogger().setLevel(logging.INFO)
-	logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
+	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 	testing = len(argv) > 1 and argv[1] == "debug"
-	testing = False
 	stitcher=Stitcher(0,1,2,testing=testing)
 	stitcher.initPlotter()
 	while True:

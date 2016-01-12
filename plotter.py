@@ -1,6 +1,7 @@
 "Install tcl tk python-tkinter python-modules."
 
 import collections
+import config
 import errno
 import logging
 import update_message
@@ -22,11 +23,6 @@ DISTANCE_MOTION_THRESHOLD = 20
 # How many cell updates to send in one message to a renderer
 #MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
 MAXIMUM_CELL_UPDATES_PER_MESSAGE = 700  # This should be < 1400 bytes
-
-# We have 4 columns and 2 rows
-#ZONES=[1,1]
-ZONES=[4,2]
-RENDERER_CONFIG_MAX_LENGTH = 512
 
 class Plotter:
     def cellStateForChange(self, distance_delta):
@@ -170,9 +166,9 @@ class Plotter:
 		logging.exception("Error sending to '%s'" % renderer)
 
     def _getRendererAddress(self, col, row):
-	rendererIndex = (update_message.RENDERER_ADDRESS_BASE_OCTET + 
-	  ZONES[0] * row + col)
-	address = update_message.RENDERER_ADDRESS_BASE + str(rendererIndex)
+	rendererIndex = (config.RENDERER_ADDRESS_BASE_OCTET + 
+	  config.ZONES[0] * row + col)
+	address = config.RENDERER_ADDRESS_BASE + str(rendererIndex)
         #logging.debug("_getRendererAddress for %d,%d is %s." % (col, row, rendererIndex))
 	return address
 
@@ -180,29 +176,29 @@ class Plotter:
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setblocking(1)
 	tries = 0
-	while tries < update_message.MAXIMUM_RENDERER_CONNECT_RETRIES:
+	while tries < config.MAXIMUM_RENDERER_CONNECT_RETRIES:
 		tries += 1
 		try:
-			logging.debug("Attempt #%d to connect to %s:%d" % (tries, address, update_message.RENDERER_PORT))
-			s.connect((address, update_message.RENDERER_PORT))
+			logging.debug("Attempt #%d to connect to %s:%d" % (tries, address, config.RENDERER_PORT))
+			s.connect((address, config.RENDERER_PORT))
 			logging.debug("connected")
 			return s
 		except Exception as e:
 			if e.errno == errno.EINPROGRESS or e.errno ==  errno.EALREADY:
-		  		_, writeables, in_error = select.select([], [s], [s], update_message.RENDERER_CONNECT_TIMEOUT_SECS) 
+		  		_, writeables, in_error = select.select([], [s], [s], config.RENDERER_CONNECT_TIMEOUT_SECS) 
 		  		if s not in writeables or s in in_error:
 		    			logging.error("Socket for %s in error or not writeable" % address)
 					return None
 				else:
 		    			logging.error("Socket for %s error '%s'" % (s, e))
-	logging.error("Failed to connect to %s:%d" % (address, update_message.RENDERER_PORT))
+	logging.error("Failed to connect to %s:%d" % (address, config.RENDERER_PORT))
 	return None
 	
     def _parseConfig(self, rendererConfig):
 	logging.info("Received renderer config of %s" % rendererConfig)
 	self.PER_ZONE_CELL_DIMENSIONS = [int(x) for x in rendererConfig.split(",")]
-	self.ROWS=ZONES[1]*self.PER_ZONE_CELL_DIMENSIONS[1]
-	self.COLUMNS=ZONES[0]*self.PER_ZONE_CELL_DIMENSIONS[0]
+	self.ROWS=config.ZONES[1]*self.PER_ZONE_CELL_DIMENSIONS[1]
+	self.COLUMNS=config.ZONES[0]*self.PER_ZONE_CELL_DIMENSIONS[0]
 	# cell[x][y]=[distance, state, timestamp, refreshNeeded]
 	self._cells=[]
 	for col in range(0,self.COLUMNS):
