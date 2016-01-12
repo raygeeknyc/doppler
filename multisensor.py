@@ -182,7 +182,7 @@ def main(argv):
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 	testing = len(argv) > 1 and argv[1] == "debug"
-	testing = True
+	testing = False
 	stitcher=Stitcher(0,1,2,testing=testing)
 	stitcher.initPlotter()
 	while True:

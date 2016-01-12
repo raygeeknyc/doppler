@@ -43,9 +43,9 @@ class Stitcher(sensor.BaseStitcher):
 	def _initializeDepthMaps(self):
                 super(Stitcher, self)._initializeDepthMaps()
 
-		self._depth_map = []
+		self._depth_maps = [[]]
 
-		self._depth_timestamps = [None]
+		self._depth_timestamps = [[None]]
 
 		# Get initial depth maps
 		self.getSensorDepthMaps()
@@ -62,22 +62,15 @@ class Stitcher(sensor.BaseStitcher):
 		else:
 			return self._depth_maps[self._kinect_right][spot_subrow][spot_subcol - CENTER_SENSOR_EDGE]
 
-	def getSensorDepthMap(self, sensor_idx):
-		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
-
 	def getSensorDepthMaps(self):
 		start = time.time()
 		if not self._testing:
-			logging.debug("Getting depth maps from 3 sensors")
-			self.getSensorDepthMap(self._kinect_left)
-			self.getSensorDepthMap(self._kinect_center)
-			self.getSensorDepthMap(self._kinect_right)
+			logging.debug("Getting depth map from 1 sensor")
+			self.getSensorDepthMap(0)
 		else:
-			logging.debug("Getting 3 dummy depth maps")
-			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = sensor.getDummyDepthMap()
-			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = sensor.getDummyDepthMap()
-			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = sensor.getDummyDepthMap()
-		logging.debug("Got 3 maps in %f secs" % (time.time() - start))
+			logging.debug("Getting 1 dummy depth map")
+			self._depth_maps[0], self._depth_timestamps[0] = sensor.getDummyDepthMap()
+		logging.debug("Got 1 maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self):
 		"""
@@ -159,13 +152,13 @@ class Stitcher(sensor.BaseStitcher):
 		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
 def main(argv):
-	print("multisensor:main()")
+	print("singlesensor:main()")
 	logging.getLogger().setLevel(logging.INFO)
 	logging.info("Starting up with %d x %d renderers" % (plotter.ZONES[0], plotter.ZONES[1]))
 	logging.info("SENSOR_COLUMNS, SENSOR_ROWS = %d, %d" % (SENSOR_COLUMNS, SENSOR_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 	testing = len(argv) > 1 and argv[1] == "debug"
-	testing = True
+	testing = False
 	stitcher=Stitcher(testing=testing)
 	stitcher.initPlotter()
 	while True:

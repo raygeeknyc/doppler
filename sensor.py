@@ -50,7 +50,7 @@ class BaseStitcher(object):
 		self._testing = testing
 		self._initializeDepthMaps()
 		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[0][0])
-		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[self._kinect_center]) ,len(self._depth_maps[self._kinect_center][0])))
+		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[0]) ,len(self._depth_maps[0][0])))
 		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
 		self._samples_for_cell = collections.deque()  # This often created collection is stored as an attribute purely for performance
 
