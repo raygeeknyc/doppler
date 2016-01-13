@@ -1,6 +1,7 @@
 "apt-get install tcl tk python-pygame"
 
 import collections
+import config
 import logging
 import pygame
 from pygame.locals import *
@@ -33,12 +34,12 @@ def MemUsedMB():
     return (usage[2]*resource.getpagesize())/1048576.0
 
 def getPort():
-	return update_message.RENDERER_PORT
+	return config.RENDERER_PORT
 
 class PixelBlock:
-    CELL_WIDTH = 10  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 10  # This is a Pixels vertical pitch
-    CELL_MARGIN = 03  # This is the padding within a Pixel
+    CELL_WIDTH = 12  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 12  # This is a Pixels vertical pitch
+    CELL_MARGIN = 01  # This is the padding within a Pixel
     CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
