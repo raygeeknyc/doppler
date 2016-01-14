@@ -254,6 +254,7 @@ def main(argv=[]):
 	a = App(displayInfo, displaySurface)  
 	while True:
 		try:
+			a.setAllCellsRandomly()
 			a.refresh()
 		except Exception as e:
 			logging.exception("Top level exception")
