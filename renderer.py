@@ -37,9 +37,9 @@ def getPort():
 	return config.RENDERER_PORT
 
 class PixelBlock:
-    CELL_WIDTH = 12  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 12  # This is a Pixels vertical pitch
-    CELL_MARGIN = 01  # This is the padding within a Pixel
+    CELL_WIDTH = 23  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 23  # This is a Pixels vertical pitch
+    CELL_MARGIN = 02  # This is the padding within a Pixel
     CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
     CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
 
