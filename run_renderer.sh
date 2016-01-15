@@ -5,6 +5,6 @@ fi
 /usr/bin/xset -dpms
 # This kill should only be run on standalone, dedicated renderer nodes
 # killall -9 python
-while true;do
-	python renderer.py debug
-done
+#while true;do
+python renderer.py debug
+#done

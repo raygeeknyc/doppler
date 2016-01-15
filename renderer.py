@@ -194,6 +194,7 @@ class App:
 	if not connection:
 		logging.error("No connection.")
 		return
+	logging.info("Sending {0},{1}".format(self._cols, self._rows))
 	connection.send("{0},{1}".format(self._cols, self._rows))
 
     def getCellUpdates(self):
@@ -234,7 +235,7 @@ class App:
 	self.getConfigRequest()
 
 def main(argv=[]):	
-	logging.getLogger().setLevel(logging.DEBUG)
+	logging.getLogger().setLevel(logging.INFO)
 
 	pygame.init()
 	pygame.mouse.set_visible(False)
@@ -254,7 +255,6 @@ def main(argv=[]):
 	a = App(displayInfo, displaySurface)  
 	while True:
 		try:
-			a.setAllCellsRandomly()
 			a.refresh()
 		except Exception as e:
 			logging.exception("Top level exception")

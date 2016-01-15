@@ -65,25 +65,27 @@ class Plotter:
 	first_renderer = self._configConnection(first_renderer_addr)
 	if not first_renderer:
 		raise Exception("No renderer found at %s" % first_renderer_addr)
-	config = ""
+	configuration = ""
 	buffer = ""
 	waiting = True
-	logging.debug("Getting config")
+	logging.debug("Getting configuration")
 	while buffer or waiting:
 		try:
-			buffer = string.strip(first_renderer.recv(RENDERER_CONFIG_MAX_LENGTH))
+			logging.debug("Getting configuration fragment")
+			buffer = string.strip(first_renderer.recv(config.RENDERER_CONFIG_MAX_LENGTH))
 			if buffer:
-				logging.debug("Got config fragment '%s'" % buffer)
-				config += buffer
+				logging.debug("Got configuration fragment '%s'" % buffer)
+				configuration += buffer
 			waiting = False
 		except:
+			logging.exception("Exception receiving")
 			if not waiting:
 				break
 			pass
 	self._closeRenderer(first_renderer)
-	logging.info("Renderer sent %s" % config)
+	logging.info("Renderer sent %s" % configuration)
 	if not self.PER_ZONE_CELL_DIMENSIONS:
-		self._parseConfig(config)
+		self._parseConfig(configuration)
 
     def initAllCellsStates(self, newDistanceValues):
 	"[col][row] = distance."
@@ -161,7 +163,7 @@ class Plotter:
 	#logging.debug("Sending %d characters for %d updates" % (len(seriesText), len(cellStates)))
 	#logging.debug("Update message is '%s'...'%s'" % (seriesText[0:min(len(seriesText),10)], seriesText[-min(len(seriesText),10):]))
 	try:
-		self._updateSocket.sendto(zlib.compress(seriesText, 9), (renderer, update_message.RENDERER_PORT))
+		self._updateSocket.sendto(zlib.compress(seriesText, 9), (renderer, config.RENDERER_PORT))
 	except:
 		logging.exception("Error sending to '%s'" % renderer)
 
@@ -250,54 +252,54 @@ def runTests():
 	plotter = Plotter()
 	logging.info("testSetAllCells")
 	plotter.testSetAllCells()
-	logging.info("%d COLUMNS and %d self.ROWS" % (plotter.COLUMNS, plotter.ROWS))
+	logging.info("%d COLUMNS and %d ROWS" % (plotter.COLUMNS, plotter.ROWS))
 	logging.debug("%d X %d cells" % (len(plotter._cells), len(plotter._cells[0])))
 	plotter.refreshCells()
 	logging.info("testUpdateCellStates")
-	plotter.testUpdateCellStates(60,10)
+	plotter.testUpdateCellStates(30,10)
 	plotter.testUpdateCellStates(3,10)
 	plotter.testUpdateCellStates(10, plotter.ROWS-26)
-	plotter.testUpdateCellStates(40, 5)
+	plotter.testUpdateCellStates(20, 5)
 	plotter.testUpdateCellStates(plotter.COLUMNS-5, 15)
 	start = time.time()
 	plotter.refreshCells()
 	logging.info("refresh took %d" % (time.time() - start))
 	logging.info("testSendUpdates")
 	plotter.testSendUpdates(10,10)
-	plotter.testSendUpdates(40,18)
-	plotter.testSendUpdates(40,40)
-	plotter.testSendUpdates(70,10)
-	plotter.testSendUpdates(40,35)
+	plotter.testSendUpdates(20,18)
+	plotter.testSendUpdates(20,40)
+	plotter.testSendUpdates(25,10)
+	plotter.testSendUpdates(30,35)
 
-	plotter.testSendUpdates(380,21)
-	plotter.testSendUpdates(380,100)
+	plotter.testSendUpdates(33,21)
+	plotter.testSendUpdates(34,22)
 
-	plotter.testSendUpdates(250,21)
-	plotter.testSendUpdates(250,100)
+	plotter.testSendUpdates(25,21)
+	plotter.testSendUpdates(25,30)
 
-	plotter.testSendUpdates(254,21)
-	plotter.testSendUpdates(254,100)
+	plotter.testSendUpdates(25,21)
+	plotter.testSendUpdates(25,30)
 
-	plotter.testSendUpdates(258,21)
-	plotter.testSendUpdates(258,100)
+	plotter.testSendUpdates(25,21)
+	plotter.testSendUpdates(25,30)
 
-	plotter.testSendUpdates(260,21)
-	plotter.testSendUpdates(260,100)
+	plotter.testSendUpdates(26,21)
+	plotter.testSendUpdates(26,30)
 
-	plotter.testSendUpdates(264,21)
-	plotter.testSendUpdates(264,100)
+	plotter.testSendUpdates(26,21)
+	plotter.testSendUpdates(26,30)
 
-	plotter.testSendUpdates(268,21)
-	plotter.testSendUpdates(268,100)
+	plotter.testSendUpdates(26,21)
+	plotter.testSendUpdates(26,30)
 
-	plotter.testSendUpdates(270,21)
-	plotter.testSendUpdates(270,100)
+	plotter.testSendUpdates(27,21)
+	plotter.testSendUpdates(27,30)
 
-	plotter.testSendUpdates(274,21)
-	plotter.testSendUpdates(274,100)
+	plotter.testSendUpdates(27,21)
+	plotter.testSendUpdates(27,30)
 
-	plotter.testSendUpdates(278,21)
-	plotter.testSendUpdates(278,100)
+	plotter.testSendUpdates(28,21)
+	plotter.testSendUpdates(28,30)
 
 	start = time.time()
 	plotter.testSendUpdates(plotter.COLUMNS-6, 3)
