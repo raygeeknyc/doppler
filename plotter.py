@@ -212,15 +212,13 @@ class Plotter:
     def finish(self):
 	logging.info("TODO closing sockets")
 
-    def testSendUpdates(self, baseCol, baseRow):
-	testUpdates = []
+    def recordTestUpdates(self,testUpdates, baseCol, baseRow):
 	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_FAST, (baseCol, baseRow)))
 	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (baseCol+1, baseRow+1)))
 	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (baseCol+2, baseRow+2)))
 	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_RECEDE_SLOW, (baseCol+3, baseRow+3)))
 	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_APPROACH_SLOW, (baseCol+1, baseRow-1)))
 	testUpdates.append(update_message.CellUpdate(update_message.CellState.CHANGE_APPROACH_SLOW, (baseCol-1, baseRow+1)))
-	self.sendTestUpdates(testUpdates)
 
     def testSetAllCells(self):
 	self.setAllCellDistances(100)
@@ -247,6 +245,11 @@ class Plotter:
 	for row in range(baseRow, baseRow+10):
 		self.updateCellState(col, row, 190)
 			
+def repeatTests(reps):
+	for i in range(0, reps):
+		print i
+		runTests()
+
 def runTests():
 	logging.getLogger().setLevel(logging.DEBUG)
 	plotter = Plotter()
@@ -264,43 +267,46 @@ def runTests():
 	start = time.time()
 	plotter.refreshCells()
 	logging.info("refresh took %d" % (time.time() - start))
-	logging.info("testSendUpdates")
-	plotter.testSendUpdates(10,10)
-	plotter.testSendUpdates(20,18)
-	plotter.testSendUpdates(20,40)
-	plotter.testSendUpdates(25,10)
-	plotter.testSendUpdates(30,35)
+	logging.info("recordTestUpdates")
+	testUpdates = []
+	plotter.recordTestUpdates(testUpdates,10,10)
+	plotter.recordTestUpdates(testUpdates,20,18)
+	plotter.recordTestUpdates(testUpdates,20,40)
+	plotter.recordTestUpdates(testUpdates,25,10)
+	plotter.recordTestUpdates(testUpdates,30,35)
 
-	plotter.testSendUpdates(33,21)
-	plotter.testSendUpdates(34,22)
+	plotter.recordTestUpdates(testUpdates,33,21)
+	plotter.recordTestUpdates(testUpdates,34,22)
 
-	plotter.testSendUpdates(25,21)
-	plotter.testSendUpdates(25,30)
+	plotter.recordTestUpdates(testUpdates,25,21)
+	plotter.recordTestUpdates(testUpdates,25,30)
 
-	plotter.testSendUpdates(25,21)
-	plotter.testSendUpdates(25,30)
+	plotter.recordTestUpdates(testUpdates,25,21)
+	plotter.recordTestUpdates(testUpdates,25,30)
 
-	plotter.testSendUpdates(25,21)
-	plotter.testSendUpdates(25,30)
+	plotter.recordTestUpdates(testUpdates,25,21)
+	plotter.recordTestUpdates(testUpdates,25,30)
 
-	plotter.testSendUpdates(26,21)
-	plotter.testSendUpdates(26,30)
+	plotter.recordTestUpdates(testUpdates,26,21)
+	plotter.recordTestUpdates(testUpdates,26,30)
 
-	plotter.testSendUpdates(26,21)
-	plotter.testSendUpdates(26,30)
+	plotter.recordTestUpdates(testUpdates,26,21)
+	plotter.recordTestUpdates(testUpdates,26,30)
 
-	plotter.testSendUpdates(26,21)
-	plotter.testSendUpdates(26,30)
+	plotter.recordTestUpdates(testUpdates,26,21)
+	plotter.recordTestUpdates(testUpdates,26,30)
 
-	plotter.testSendUpdates(27,21)
-	plotter.testSendUpdates(27,30)
+	plotter.recordTestUpdates(testUpdates,27,21)
+	plotter.recordTestUpdates(testUpdates,27,30)
 
-	plotter.testSendUpdates(27,21)
-	plotter.testSendUpdates(27,30)
+	plotter.recordTestUpdates(testUpdates,27,21)
+	plotter.recordTestUpdates(testUpdates,27,30)
 
-	plotter.testSendUpdates(28,21)
-	plotter.testSendUpdates(28,30)
+	plotter.recordTestUpdates(testUpdates,28,21)
+	plotter.recordTestUpdates(testUpdates,28,30)
+
+	plotter.recordTestUpdates(testUpdates,plotter.COLUMNS-6, 3)
 
 	start = time.time()
-	plotter.testSendUpdates(plotter.COLUMNS-6, 3)
-	logging.info("testSendUpdates took %d" % (time.time() - start))
+	plotter.sendTestUpdates(testUpdates)
+	logging.info("sendTestUpdates took %d" % (time.time() - start))

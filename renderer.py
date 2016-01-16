@@ -170,11 +170,13 @@ class App:
         App.idle_time_consumption = (time.time() - start)
 
         start = time.time()
+	redraw_count = len(self._changedCells)
         for cellToRefresh in self._changedCells:
             pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
         self._changedCells = []
         self._surface.unlock()
         App.redraw_time_consumption = (time.time() - start)
+	return redraw_count
 
     def getConfigRequest(self):
 	configConn = None
@@ -225,8 +227,8 @@ class App:
 
     def refresh(self):
 	self.updateCells()
-	self.redraw()
-	logging.debug("redraw frequency: %f at %f" % (App.redraw_cycle_time, time.time()))
+	updated_count = self.redraw()
+	logging.debug("redraw frequency: %f of %d cells at %f" % (App.redraw_cycle_time, updated_count, time.time()))
 	logging.debug("update recv time: %f" % App.update_time_consumption)
 	logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
 	logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
@@ -235,7 +237,7 @@ class App:
 	self.getConfigRequest()
 
 def main(argv=[]):	
-	logging.getLogger().setLevel(logging.INFO)
+	logging.getLogger().setLevel(logging.DEBUG if DEBUG_DISPLAY else logging.INFO)
 
 	pygame.init()
 	pygame.mouse.set_visible(False)
