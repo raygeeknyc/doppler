@@ -18,11 +18,6 @@ import string
 import sys
 import zlib
 
-if len(sys.argv) > 1 and sys.argv[1] == "debug":
-	DEBUG_DISPLAY=True
-else:
-	DEBUG_DISPLAY=False
-
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
@@ -39,25 +34,27 @@ def getPort():
 	return config.RENDERER_PORT
 
 class App:
-    update_time_consumption = 0.0
-    idle_time_consumption = 0.0
-    redraw_time_consumption = 0.0
-    redraw_cycle_timestamp = 0.0
-    redraw_cycle_time = 0.0
-
     @staticmethod
     def _colorForState(state):
         """Return the color for state."""
         return pixelblock.CELL_COLORS[state]
 
-    def __init__(self, info, surface):
+    def _initializeDisplay(self, surface, info):
         self._surface = surface
         self._display_info = info
         self._screen_width = info.current_w
         self._screen_height = info.current_h
-        logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
+
+    def __init__(self, surface, info):
+        self.update_time_consumption = 0.0
+        self.idle_time_consumption = 0.0
+        self.redraw_time_consumption = 0.0
+        self.redraw_cycle_timestamp = 0.0
+        self.redraw_cycle_time = 0.0
+	self._initializeDisplay(surface, info)
+        logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
 	self._cellUpdates = []
         self._changedCells = []
@@ -123,8 +120,8 @@ class App:
   
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
-        App.redraw_cycle_time = time.time() - App.redraw_cycle_timestamp
-        App.redraw_cycle_timestamp = time.time()
+        self.redraw_cycle_time = time.time() - self.redraw_cycle_timestamp
+        self.redraw_cycle_timestamp = time.time()
 
         start = time.time()
         stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
@@ -137,7 +134,7 @@ class App:
                                      y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
                                      PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
                     self._cells[x][y].ttl = expire
-        App.idle_time_consumption = (time.time() - start)
+        self.idle_time_consumption = (time.time() - start)
 
         start = time.time()
 	redraw_count = len(self._changedCells)
@@ -145,7 +142,7 @@ class App:
             pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
         self._changedCells = []
         self._surface.unlock()
-        App.redraw_time_consumption = (time.time() - start)
+        self.redraw_time_consumption = (time.time() - start)
 	return redraw_count
 
     def getConfigRequest(self):
@@ -183,7 +180,7 @@ class App:
 	if updateData:
         	for cellMessage in updateData.split("|"):
 			self._cellUpdates.append(update_message.CellUpdate.fromText(cellMessage))
-	App.update_time_consumption = (time.time() - start)
+	self.update_time_consumption = (time.time() - start)
 
     def updateCells(self):
 	now = time.time()
@@ -195,14 +192,17 @@ class App:
 	      	self._changedCells.append(self._cells[x][y])
 	self._cellUpdates = []
 
+    def _updateDisplay(self):
+	pygame.display.update()
+
     def refresh(self):
 	self.updateCells()
 	updated_count = self.redraw()
-	logging.debug("redraw frequency: %f of %d cells at %f" % (App.redraw_cycle_time, updated_count, time.time()))
-	logging.debug("update recv time: %f" % App.update_time_consumption)
-	logging.debug("idle cell plot time: %f" % App.idle_time_consumption)
-	logging.debug("updated cell plot time: %f" % App.redraw_time_consumption)
-	pygame.display.update()
+	logging.debug("redraw frequency: %f of %d cells at %f" % (self.redraw_cycle_time, updated_count, time.time()))
+	logging.debug("update recv time: %f" % self.update_time_consumption)
+	logging.debug("idle cell plot time: %f" % self.idle_time_consumption)
+	logging.debug("updated cell plot time: %f" % self.redraw_time_consumption)
+        self._updateDisplay()
 	self.getCellUpdates()
 	self.getConfigRequest()
 
@@ -224,7 +224,7 @@ def main(argv=[]):
 
 	signal.signal(signal.SIGINT, quit_handler)
 
-	a = App(displayInfo, displaySurface)  
+	a = App(displaySurface, displayInfo)  
 	while True:
 		try:
 			a.refresh()
@@ -234,6 +234,10 @@ def main(argv=[]):
 	a.finish()
 
 
+if len(sys.argv) > 1 and sys.argv[1] == "debug":
+	DEBUG_DISPLAY=True
+else:
+	DEBUG_DISPLAY=False
 
 if __name__ == "__main__":
 	main()
