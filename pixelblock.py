@@ -12,7 +12,7 @@ class PixelBlock:
       self.row = top
       self.plot_x = left * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN
       self.plot_y = top * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN
-      self.color = _NEUTRAL_COLOR
+      self.color = NEUTRAL_COLOR
       self.ttl = when
 
 _BRIGHTRED = (255,50,50)
@@ -29,4 +29,4 @@ CELL_COLORS = {
     update_message.CellState.CHANGE_RECEDE_FAST: _BRIGHTRED,
     update_message.CellState.CHANGE_REST: _LIGHTGREY,
     update_message.CellState.CHANGE_STILL: _DIMGREY}
-_NEUTRAL_COLOR = (0,0,0)
+NEUTRAL_COLOR = (0,0,0)

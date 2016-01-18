@@ -55,6 +55,7 @@ class Stitcher(sensor.BaseStitcher):
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell."
+		logging.debug("Depth(%d,%d)" % (spot_subrow, spot_subcol))
 		return max(self._depth_maps[0][spot_subrow][spot_subcol])
 
 	def _getSensorDepthMaps(self):
@@ -133,7 +134,11 @@ class Stitcher(sensor.BaseStitcher):
 
 def main(argv):
 	print("singlesensor:main()")
-	logging.getLogger().setLevel(logging.DEBUG)
+        if len(sys.argv) > 1 and sys.argv[1] == "debug":
+		DEBUG_SENSOR = True
+	else:
+		DEBUG_SENSOR = False
+        logging.getLogger().setLevel(logging.DEBUG if DEBUG_SENSOR else logging.INFO)
 	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("SENSOR_COLUMNS, SENSOR_ROWS = %d, %d" % (SENSOR_COLUMNS, SENSOR_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))

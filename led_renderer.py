@@ -23,6 +23,7 @@ LED_MATRIX_COLS = 32
 
 class LedApp(App):
     def _initializeDisplay(self, surface, unused_info):
+	logging.debug("Initializing LED display")
         self._surface = surface
         self._surface.Clear()
         self._screen_width = LED_MATRIX_COLS
@@ -36,23 +37,20 @@ class LedApp(App):
         self.redraw_cycle_timestamp = time.time()
 
         start = time.time()
-        stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
+        stillColor = pixelblock.NEUTRAL_COLOR
         expire = start + renderer.CELL_IDLE_TIME
         for x in xrange(len(self._cells)):
             for y in xrange(len(self._cells[x])):
                 if self._cells[x][y].ttl < start:
                     self._surface.SetPixel(x, y, stillColor[0], stillColor[1], stillColor[2])
-#                          (r * 0b001001001) / 2,
-#                          (g * 0b001001001) / 2,
-#                           b * 0b00010001)
                     self._cells[x][y].ttl = expire
         self.idle_time_consumption = (time.time() - start)
 
         start = time.time()
 	redraw_count = len(self._changedCells)
         for cellToRefresh in self._changedCells:
-            self._surface.SetPixel(cellToRefresh.plot_x, cellToRefresh.plot_y,
-              cellToRefresh.color[0],cellToRefresh.color[1],cellToRefresh.color[2])
+            self._surface.SetPixel(cellToRefresh.col, cellToRefresh.row,
+              cellToRefresh.color[0], cellToRefresh.color[1], cellToRefresh.color[2])
         self._changedCells = []
         self.redraw_time_consumption = (time.time() - start)
 	return redraw_count
@@ -62,6 +60,7 @@ class LedApp(App):
 
 def main(argv=[]):	
 	logging.getLogger().setLevel(logging.DEBUG if DEBUG_DISPLAY else logging.INFO)
+	logging.info("running")
 
 	def quit_handler(signal, frame):
 		logging.info("Interrupted")
@@ -69,7 +68,9 @@ def main(argv=[]):
 
 	signal.signal(signal.SIGINT, quit_handler)
 
+	logging.debug("Creating matrix")
 	matrix = Adafruit_RGBmatrix(LED_MATRIX_ROWS, 1)
+	logging.debug("Starting renderer")
 	a = LedApp(matrix, None)
 	while True:
 		try:
@@ -80,10 +81,10 @@ def main(argv=[]):
 	a.finish()
 
 
-if len(sys.argv) > 1 and sys.argv[1] == "debug":
-        DEBUG_DISPLAY=True
-else:   
-        DEBUG_DISPLAY=False
-
 if __name__ == "__main__":
+	if len(sys.argv) > 1 and sys.argv[1] == "debug":
+		print("debugging")
+		DEBUG_DISPLAY=True
+	else:   
+		DEBUG_DISPLAY=False
 	main()

@@ -40,6 +40,7 @@ class App:
         return pixelblock.CELL_COLORS[state]
 
     def _initializeDisplay(self, surface, info):
+	logging.debug("initializing video display")
         self._surface = surface
         self._display_info = info
         self._screen_width = info.current_w
@@ -107,7 +108,7 @@ class App:
 	      logging.debug("cell %d,%d color is %s" % (col, row, self._cells[col][row].color))
 
     def setAllCellsRandomly(self):
-        logging.debug("Setting all cells to random colors")
+        logging.debug("Setting all cells in %d,%d to random colors" % (self._cols, self._rows))
 	updateData = []
 
         for row in xrange(self._rows):
