@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-"Install install freenect libusb libusb=dev libusb-dev libfreenect-demos python-freenect python-numpy python-support python-opencv python-matplotib python-matplotlib"
+"Install install libusb libusb=dev libusb-dev python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
 "Test with import sensor;reload(sensor)"
 
 import collections
 import copy
 import errno
-from itertools import chain
-import freenect
 import logging
 import numpy
+import cv2
 import random
 import plotter
 import sys
@@ -36,7 +35,7 @@ TEST_CLOSEST_DISTANCE = 100
 TEST_FARTHEST_DISTANCE = 2040
 
 
-def getDummyDepthMap():
+def _getDummyDepthMap():
 	start = time.time()
 	dummy_map = numpy.random.random((SENSOR_COLUMNS, SENSOR_ROWS)) * (TEST_FARTHEST_DISTANCE - TEST_CLOSEST_DISTANCE) + TEST_CLOSEST_DISTANCE
 	return dummy_map, time.time()
@@ -45,12 +44,21 @@ class BaseStitcher(object):
 	def _initializeDepthMaps(self):
                 pass
 
+	def _initializeSensors(self, sensor_count):
+		self._kinects = []
+		logging.debug("initializing %d sensors" % sensor_count)
+		for sensor in range(sensor_count):
+			self._kinects.append(cv2.VideoCapture(sensor))
+		logging.debug("sensors initialized")
+
 	def __init__(self, testing = True):
-	
 		self._testing = testing
+		self._initializeSensors(1)
 		self._initializeDepthMaps()
-		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[0][0])
-		logging.info('Sensor Depth[%d],[%d]' % (len(self._depth_maps[0]) ,len(self._depth_maps[0][0])))
+		logging.debug("%d maps" % len(self._depth_maps))
+		self.MAXIMUM_SENSOR_DEPTH_READING = self._depth_maps[0].max()
+		logging.debug("max %s" % str(self.MAXIMUM_SENSOR_DEPTH_READING))
+		logging.info('Sensor Depth[%d][%d]' % (len(self._depth_maps[0]) ,len(self._depth_maps[0][0])))
 		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
 		self._samples_for_cell = collections.deque()  # This often created collection is stored as an attribute purely for performance
 
@@ -58,19 +66,23 @@ class BaseStitcher(object):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
                 raise NotImplementedError()
 
-	def getSensorDepthMap(self, sensor_idx):
-		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
+	def _getSensorDepthMap(self, sensor_idx):
+		ret, frame = self._kinects[sensor_idx].read()
+		logging.debug("read returned %s" % str(ret))
+		if ret:
+			logging.debug("frame is %d x %d pixels" % (len(frame), len(frame[0])))
+			self._depth_maps[sensor_idx] = frame
+		else:
+			self._depth_maps[sensor_idx] = None
+		self._depth_timestamps[sensor_idx] = time.time()
 
-	def getSensorDepthMaps(self):
+	def _getSensorDepthMaps(self):
                 raise NotImplementedError()
 
 	def plotMappedDepths(self):
 		"""
 		Send updates to the plotters depth map, from the stitched sensor maps,
 		using the min of sensor cells that correspond to each plotter cell.
-		Horizontally flip the plotter map since the libfreenect library is flipping the depth stream, as mentioned in release notes.
-		It should be OK to flip at this coarse level as we are averaging the sensor points around a given cell so the orientation
-		within a cell's sensor cells should not matter.
 		"""
 		for spot_col in xrange(self.plotter.COLUMNS):
 			flipped_col = self.COL_LIMIT - spot_col

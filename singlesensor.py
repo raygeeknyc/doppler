@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"Install install freenect libusb libusb=dev libusb-dev libfreenect-demos python-freenect python-numpy python-support python-opencv python-matplotib python-matplotlib"
+"Install install libusb libusb-dev python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
 "Test with import sensor;reload(sensor)"
 
@@ -8,7 +8,6 @@ import config
 import copy
 import errno
 from itertools import chain
-import freenect
 import logging
 import numpy
 import random
@@ -49,45 +48,25 @@ class Stitcher(sensor.BaseStitcher):
 		self._depth_timestamps = [[None]]
 
 		# Get initial depth maps
-		self.getSensorDepthMaps()
+		self._getSensorDepthMaps()
 
 	def __init__(self, testing = True):
                 super(Stitcher, self).__init__(testing)
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
-		"Return the value at the mapped cell from the 3 individual sensor depth maps."
-		if spot_subcol < LEFT_SENSOR_EDGE:
-			return self._depth_maps[self._kinect_left][spot_subrow][spot_subcol]
-		elif spot_subcol < CENTER_SENSOR_EDGE:
-			return self._depth_maps[self._kinect_center][spot_subrow][spot_subcol - LEFT_SENSOR_EDGE]
-		else:
-			return self._depth_maps[self._kinect_right][spot_subrow][spot_subcol - CENTER_SENSOR_EDGE]
+		"Return the value at the mapped cell."
+		return max(self._depth_maps[0][spot_subrow][spot_subcol])
 
-	def getSensorDepthMaps(self):
+	def _getSensorDepthMaps(self):
 		start = time.time()
 		if not self._testing:
 			logging.debug("Getting depth map from 1 sensor")
-			self.getSensorDepthMap(0)
+			self._getSensorDepthMap(0)
 		else:
 			logging.debug("Getting 1 dummy depth map")
-			self._depth_maps[0], self._depth_timestamps[0] = sensor.getDummyDepthMap()
+			self._depth_maps[0], self._depth_timestamps[0] = sensor._getDummyDepthMap()
 		logging.debug("Got 1 maps in %f secs" % (time.time() - start))
 
-	def plotMappedDepths(self):
-		"""
-		Send updates to the plotters depth map, from the stitched sensor maps,
-		using the min of sensor cells that correspond to each plotter cell.
-		Horizontally flip the plotter map since the libfreenect library is flipping the depth stream, as mentioned in release notes.
-		It should be OK to flip at this coarse level as we are averaging the sensor points around a given cell so the orientation
-		within a cell's sensor cells should not matter.
-		"""
-		for spot_col in xrange(self.plotter.COLUMNS):
-			flipped_col = self.COL_LIMIT - spot_col
-			for spot_row in xrange(self.plotter.ROWS):
-				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
-				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
-					self.plotter.updateCellState(spot_col, spot_row, spot_depth)
-				
 	def calculateMergedDepth(self, col, row):
 		"Calculate the depth at a plotter map's cell using the center spot or the specified SAMPLER if the spot is at the maximum reading."
 		global SAMPLER
@@ -137,7 +116,7 @@ class Stitcher(sensor.BaseStitcher):
 		return (len(self._samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):
-		self.getSensorDepthMaps()
+		self._getSensorDepthMaps()
 		self.plotMappedDepths()
 
 	def initPlotter(self):
@@ -154,7 +133,7 @@ class Stitcher(sensor.BaseStitcher):
 
 def main(argv):
 	print("singlesensor:main()")
-	logging.getLogger().setLevel(logging.INFO)
+	logging.getLogger().setLevel(logging.DEBUG)
 	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("SENSOR_COLUMNS, SENSOR_ROWS = %d, %d" % (SENSOR_COLUMNS, SENSOR_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
