@@ -121,6 +121,7 @@ class App:
   
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
+	logging.debug("redraw()")
         self.redraw_cycle_time = time.time() - self.redraw_cycle_timestamp
         self.redraw_cycle_timestamp = time.time()
 
@@ -147,6 +148,7 @@ class App:
 	return redraw_count
 
     def getConfigRequest(self):
+	logging.debug("getConfigRequest()")
 	configConn = None
 	configAddr = None
 	try:
@@ -168,6 +170,7 @@ class App:
 	connection.send("{0},{1}".format(self._cols, self._rows))
 
     def getCellUpdates(self):
+	logging.debug("getCellUpdates()")
 	start = time.time()
 	updateData = None
 	if not self._dataSocket:
@@ -184,6 +187,7 @@ class App:
 	self.update_time_consumption = (time.time() - start)
 
     def updateCells(self):
+	logging.debug("updateCells()")
 	now = time.time()
         expire = now + CELL_IDLE_TIME
 	for cellUpdate in self._cellUpdates:
@@ -197,6 +201,7 @@ class App:
 	pygame.display.update()
 
     def refresh(self):
+	logging.debug("refresh()")
 	self.updateCells()
 	updated_count = self.redraw()
 	logging.debug("redraw frequency: %f of %d cells at %f" % (self.redraw_cycle_time, updated_count, time.time()))

@@ -51,7 +51,7 @@ class BaseStitcher(object):
 			self._kinects.append(cv2.VideoCapture(sensor))
 		logging.debug("sensors initialized")
 
-	def __init__(self, testing = True):
+	def __init__(self, testing):
 		self._testing = testing
 		self._initializeSensors(1)
 		self._initializeDepthMaps()

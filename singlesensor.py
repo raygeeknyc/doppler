@@ -50,12 +50,11 @@ class Stitcher(sensor.BaseStitcher):
 		# Get initial depth maps
 		self._getSensorDepthMaps()
 
-	def __init__(self, testing = True):
+	def __init__(self, testing):
                 super(Stitcher, self).__init__(testing)
 
 	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell."
-		logging.debug("Depth(%d,%d)" % (spot_subrow, spot_subcol))
 		return max(self._depth_maps[0][spot_subrow][spot_subcol])
 
 	def _getSensorDepthMaps(self):
@@ -121,6 +120,7 @@ class Stitcher(sensor.BaseStitcher):
 		self.plotMappedDepths()
 
 	def initPlotter(self):
+		logging.debug("initPlotter()")
 		self.plotter = plotter.Plotter()
 		# The ratio of stitched sensor input width to plotter point width, known to be > 1.0
 		self.COLUMN_SCALING_FACTOR = float(SENSOR_COLUMNS + 1) / (self.plotter.COLUMNS + 1)
@@ -139,11 +139,11 @@ def main(argv):
 	else:
 		DEBUG_SENSOR = False
         logging.getLogger().setLevel(logging.DEBUG if DEBUG_SENSOR else logging.INFO)
+	logging.debug("debugging")
 	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("SENSOR_COLUMNS, SENSOR_ROWS = %d, %d" % (SENSOR_COLUMNS, SENSOR_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
-	testing = len(argv) > 1 and argv[1] == "debug"
-	stitcher=Stitcher(testing=testing)
+	stitcher=Stitcher(testing=False)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()

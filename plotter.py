@@ -48,6 +48,7 @@ class Plotter:
 	return ((int(globalCoordinate[0] / self.PER_ZONE_CELL_DIMENSIONS[0]), int(globalCoordinate[1] / self.PER_ZONE_CELL_DIMENSIONS[1])), (globalCoordinate[0] % self.PER_ZONE_CELL_DIMENSIONS[0], globalCoordinate[1] % self.PER_ZONE_CELL_DIMENSIONS[1]))
 
     def __init__(self):
+	logging.debug("initializing Plotter()")
 	self._timeSending = 0
 	self._cells = None
 	self.PER_ZONE_CELL_DIMENSIONS = []
@@ -60,6 +61,7 @@ class Plotter:
 	self._updateSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def _getRendererConfig(self, zone):
+	logging.debug("_getRendererConfig()")
 	first_renderer_addr = self._getRendererAddress(zone[0], zone[1])
 	logging.debug("Getting renderer config from %s" % first_renderer_addr)
 	first_renderer = self._configConnection(first_renderer_addr)

@@ -33,6 +33,7 @@ class LedApp(App):
 
     def redraw(self):                          
         """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
+	logging.debug("redraw()")
         self.redraw_cycle_time = time.time() - self.redraw_cycle_timestamp
         self.redraw_cycle_timestamp = time.time()
 
