@@ -69,7 +69,7 @@ class BaseStitcher(object):
                 raise NotImplementedError()
 
 	def _getSensorRgbMap(self, sensor_idx):
-		ret, frame = self._kinects[sensor_idx].read()  // webcam version
+		ret, frame = self._kinects[sensor_idx].read()
 		self._depth_timestamps[sensor_idx] = time.time()
 		logging.debug("read returned %s" % str(ret))
 		if ret:
@@ -77,14 +77,14 @@ class BaseStitcher(object):
 			self._depth_maps[sensor_idx] = frame
 		else:
 			self._depth_maps[sensor_idx] = None
-`
+
 	def _getSensorDepthMap(self, sensor_idx):
-		self._depth_maps[sensor_idx], self.depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
+		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
 
 	def _getSensorDepthMaps(self):
                 raise NotImplementedError()
 
-	def plotMappedPixels(self):
+	def _plotMappedPixels(self):
 		"""
 		Send updates to the plotters depth map, from the stitched sensor maps,
 		using the min of sensor cells that correspond to each plotter cell.
@@ -159,7 +159,7 @@ class BaseStitcher(object):
 		return (len(self._samples_for_cell), spot_depth)
 
 	def updateDepthMaps(self):
-		self.getSensorDepthMaps()
+		self._getSensorDepthMaps()
 		self._plotMappedDepths()
 
 	def initPlotter(self):

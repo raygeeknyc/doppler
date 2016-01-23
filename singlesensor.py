@@ -115,10 +115,6 @@ class Stitcher(sensor.BaseStitcher):
 		spot_depth = int(SAMPLER(self._samples_for_cell))
 		return (len(self._samples_for_cell), spot_depth)
 
-	def updateDepthMaps(self):
-		self._getSensorDepthMaps()
-		self.plotMappedDepths()
-
 	def initPlotter(self):
 		logging.debug("initPlotter()")
 		self.plotter = plotter.Plotter()
