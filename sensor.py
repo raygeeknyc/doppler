@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-"Install install libusb libusb=dev libusb-dev python-numpy python-support python-opencv python-matplotib python-matplotlib"
+"Install freenect, python-freenect libusb libusb-dev python-numpy python-support python-opencv python-matplotlib"
 
 "Test with import sensor;reload(sensor)"
 
 import collections
 import copy
 import errno
+import freenect
 import logging
 import numpy
 import cv2
@@ -56,33 +57,51 @@ class BaseStitcher(object):
 		self._initializeSensors(1)
 		self._initializeDepthMaps()
 		logging.debug("%d maps" % len(self._depth_maps))
-		self.MAXIMUM_SENSOR_DEPTH_READING = self._depth_maps[0].max()
+		# self.MAXIMUM_SENSOR_DEPTH_READING = self._depth_maps[0].max()
+		self.MAXIMUM_SENSOR_DEPTH_READING = max(self._depth_maps[0][0])
 		logging.debug("max %s" % str(self.MAXIMUM_SENSOR_DEPTH_READING))
 		logging.info('Sensor Depth[%d][%d]' % (len(self._depth_maps[0]) ,len(self._depth_maps[0][0])))
 		logging.info('Maximum sensor depth reading: %d' % self.MAXIMUM_SENSOR_DEPTH_READING)
 		self._samples_for_cell = collections.deque()  # This often created collection is stored as an attribute purely for performance
 
-	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
+	def _getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
                 raise NotImplementedError()
 
-	def _getSensorDepthMap(self, sensor_idx):
-		ret, frame = self._kinects[sensor_idx].read()
+	def _getSensorRgbMap(self, sensor_idx):
+		ret, frame = self._kinects[sensor_idx].read()  // webcam version
+		self._depth_timestamps[sensor_idx] = time.time()
 		logging.debug("read returned %s" % str(ret))
 		if ret:
 			logging.debug("frame is %d x %d pixels" % (len(frame), len(frame[0])))
 			self._depth_maps[sensor_idx] = frame
 		else:
 			self._depth_maps[sensor_idx] = None
-		self._depth_timestamps[sensor_idx] = time.time()
+`
+	def _getSensorDepthMap(self, sensor_idx):
+		self._depth_maps[sensor_idx], self.depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
 
 	def _getSensorDepthMaps(self):
                 raise NotImplementedError()
 
-	def plotMappedDepths(self):
+	def plotMappedPixels(self):
 		"""
 		Send updates to the plotters depth map, from the stitched sensor maps,
 		using the min of sensor cells that correspond to each plotter cell.
+		"""
+		for spot_col in xrange(self.plotter.COLUMNS):
+			flipped_col = self.COL_LIMIT - spot_col
+			for spot_row in xrange(self.plotter.ROWS):
+				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
+				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
+					self.plotter.updateCellState(spot_col, spot_row, spot_depth)
+				
+	def _plotMappedDepths(self):
+		"""
+		Send updates to the plotters depth map, from the stitched sensor maps,
+		using the min of sensor cells that correspond to each plotter cell.
+		Horizontally flip the map as the sensor returns them flipped, as
+		reported in the freenect release notes.
 		"""
 		for spot_col in xrange(self.plotter.COLUMNS):
 			flipped_col = self.COL_LIMIT - spot_col
@@ -99,7 +118,7 @@ class BaseStitcher(object):
 		spot_row_start = int(row * self.ROW_SCALING_FACTOR)
 
 		# First try to just return the top left spot within the cell.
-		spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
+		spot_depth = self._getDepthAtVirtualCell(spot_col_start, spot_row_start)
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, int(spot_depth))
 		elif SAMPLER == None:  # Take the first non MAX reading in this cell
@@ -107,14 +126,14 @@ class BaseStitcher(object):
 			if not SAMPLE_FULL_AREA:  # Look for a reading in the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 				for spot_row in range(spot_row_start, spot_row_end):
-					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
+					sample = self._getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 						return (1, int(sample))
 			else:  # Look for a reading in the entire mapped cell
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
-						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+						sample = self._getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							return (1, int(sample))
 		else:  # Use a sampler to average the readings in this cell
@@ -123,14 +142,14 @@ class BaseStitcher(object):
 			if not SAMPLE_FULL_AREA:  # Sample the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 				for spot_row in range(spot_row_start, spot_row_end):
-					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
+					sample = self._getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 						self._samples_for_cell.append(sample)
 			else:  # Sample the entire mapped cell
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
-						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+						sample = self._getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							self._samples_for_cell.append(sample)
 		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
@@ -141,7 +160,7 @@ class BaseStitcher(object):
 
 	def updateDepthMaps(self):
 		self.getSensorDepthMaps()
-		self.plotMappedDepths()
+		self._plotMappedDepths()
 
 	def initPlotter(self):
 		pass

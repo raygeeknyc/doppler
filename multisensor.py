@@ -71,7 +71,7 @@ class Stitcher(sensor.BaseStitcher):
 		self._kinect_right = kinect_right_index
                 super(Stitcher, self).__init__(testing)
 
-	def getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
+	def _getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell from the 3 individual sensor depth maps."
 		if spot_subcol < LEFT_SENSOR_EDGE:
 			return self._depth_maps[self._kinect_left][spot_subrow][spot_subcol]
@@ -120,7 +120,7 @@ class Stitcher(sensor.BaseStitcher):
 		spot_row_start = int(row * self.ROW_SCALING_FACTOR)
 
 		# First try to just return the top left spot within the cell.
-		spot_depth = self.getDepthAtVirtualCell(spot_col_start, spot_row_start)
+		spot_depth = self._getDepthAtVirtualCell(spot_col_start, spot_row_start)
 		if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 			return (1, int(spot_depth))
 		elif SAMPLER == None:  # Take the first non MAX reading in this cell
@@ -128,14 +128,14 @@ class Stitcher(sensor.BaseStitcher):
 			if not SAMPLE_FULL_AREA:  # Look for a reading in the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 				for spot_row in range(spot_row_start, spot_row_end):
-					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
+					sample = self._getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 						return (1, int(sample))
 			else:  # Look for a reading in the entire mapped cell
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
-						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+						sample = self._getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							return (1, int(sample))
 		else:  # Use a sampler to average the readings in this cell
@@ -144,14 +144,14 @@ class Stitcher(sensor.BaseStitcher):
 			if not SAMPLE_FULL_AREA:  # Sample the center column
 				spot_col_center = spot_col_start + int((self.COLUMN_SCALING_FACTOR+1) / 2)
 				for spot_row in range(spot_row_start, spot_row_end):
-					sample = self.getDepthAtVirtualCell(spot_col_center, spot_row)
+					sample = self._getDepthAtVirtualCell(spot_col_center, spot_row)
 					if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 						self._samples_for_cell.append(sample)
 			else:  # Sample the entire mapped cell
 				spot_col_end = spot_col_start + int(self.COLUMN_SCALING_FACTOR) + 1
 				for spot_subcol in range(spot_col_start, spot_col_end):
 					for spot_subrow in range(spot_row_start, spot_row_end):
-						sample = self.getDepthAtVirtualCell(spot_subcol, spot_subrow)
+						sample = self._getDepthAtVirtualCell(spot_subcol, spot_subrow)
 						if sample != self.MAXIMUM_SENSOR_DEPTH_READING:
 							self._samples_for_cell.append(sample)
 		# If we had no "good" samples, we may have a legit "MAX" sensor reading.
