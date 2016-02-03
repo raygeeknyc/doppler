@@ -25,13 +25,13 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.51313132"
-     inkscape:cx="311.65985"
+     inkscape:cx="-26.460224"
      inkscape:cy="535.80102"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1280"
-     inkscape:window-height="747"
+     inkscape:window-height="667"
      inkscape:window-x="0"
      inkscape:window-y="31"
      inkscape:window-maximized="1" />
@@ -52,16 +52,17 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       style="fill:none;stroke:#000000;stroke-width:1.25289631;stroke-opacity:1"
-       d="m 341.6474,30.061023 0,22.5 -246.4375,0 0,423.999997 -22.500003,0 0,95.71875 22.500003,0 0,424.03125 246.4375,0 0,22.49998 90.875,0 0,-22.49998 246.43755,0 0,-424.5625 22.5,0 0,-94.625 -22.5,0 0,-424.562497 -246.43755,0 0,-22.5 -90.875,0 z"
+       style="fill:none;stroke:#0000ff;stroke-width:1.25289630999999990;stroke-opacity:1"
+       d="m 881.45991,478.99849 -22.5,0 0,-246.4375 -424,0 0,-22.5 -95.71875,0 0,22.5 -424.031245,0 0,246.4375 -22.499985,0 0,90.875 22.499985,0 0,246.43755 424.562495,0 0,22.5 94.625,0 0,-22.5 424.5625,0 0,-246.43755 22.5,0 0,-90.875 z"
        id="rect4351"
        inkscape:connector-curvature="0" />
     <rect
-       style="fill:none;stroke:#0000ff;stroke-width:1.06858373;stroke-opacity:1"
+       style="fill:none;stroke:#00ff00;stroke-width:1.06858373000000006;stroke-opacity:1"
        id="rect2991"
        width="196.93143"
        height="628.9314"
-       x="159.3768"
-       y="209.97031" />
+       x="481.97031"
+       y="-701.5506"
+       transform="matrix(0,1,-1,0,0,0)" />
   </g>
 </svg>

@@ -14,7 +14,7 @@
    id="svg3763"
    version="1.1"
    inkscape:version="0.48.3.1 r9886"
-   sodipodi:docname="front-back.svg">
+   sodipodi:docname="front_slotted.svg">
   <defs
      id="defs3765" />
   <sodipodi:namedview
@@ -24,14 +24,14 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.51313132"
-     inkscape:cx="136.24016"
-     inkscape:cy="478.08143"
+     inkscape:zoom="0.4646504"
+     inkscape:cx="204.5"
+     inkscape:cy="777.50281"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1280"
-     inkscape:window-height="747"
+     inkscape:window-height="667"
      inkscape:window-x="0"
      inkscape:window-y="31"
      inkscape:window-maximized="1" />
@@ -43,6 +43,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -51,8 +52,14 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       style="fill:none;stroke:#000000;stroke-opacity:1"
-       d="M 84.96875 39.46875 L 84.96875 987.40625 L 85.84375 987.40625 L 85.84375 1006.5 L 307.03125 1006.5 L 307.03125 1029.4688 L 402.90625 1029.4688 L 402.90625 1006.5 L 624.125 1006.5 L 624.125 987.40625 L 624.96875 987.40625 L 624.96875 578.9375 L 601.4375 578.9375 L 601.4375 490 L 624.96875 490 L 624.96875 39.46875 L 399.4375 39.46875 L 399.4375 62.5 L 310.5 62.5 L 310.5 39.46875 L 84.96875 39.46875 z "
-       id="rect3771" />
+       style="fill:none;stroke:#0000ff;stroke-width:2.08536744;stroke-opacity:1"
+       d="m 698.45312,5.890625 -449.40625,0 0,21.03125 -89.09375,0 0,-21.03125 -428.37499,0 0,223.531245 -21.03125,0 0,90.875 21.03125,0 0,223.53125 966.87499,0 0,-224.375 -21.0625,0 0,-89.1875 21.0625,0 0,-224.374995 z"
+       id="rect5411"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:none;stroke:#00ff00;stroke-opacity:1"
+       d="m 271.5,262.35937 -49,0 0,-21.5 -72,0 0,21.5 -49,0 0,25 49,0 0,21.5 72,0 0,-21.5 49,0 0,-25 z"
+       id="rect5427"
+       inkscape:connector-curvature="0" />
   </g>
 </svg>

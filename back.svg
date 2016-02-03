@@ -11,12 +11,12 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="744.09448819"
    height="1052.3622047"
-   id="svg2"
+   id="svg3763"
    version="1.1"
    inkscape:version="0.48.3.1 r9886"
-   sodipodi:docname="sides.svg">
+   sodipodi:docname="back.svg">
   <defs
-     id="defs4" />
+     id="defs3765" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.73284875"
-     inkscape:cx="112.36719"
-     inkscape:cy="724.39343"
+     inkscape:zoom="0.4646504"
+     inkscape:cx="204.5"
+     inkscape:cy="777.50281"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -36,14 +36,14 @@
      inkscape:window-y="31"
      inkscape:window-maximized="1" />
   <metadata
-     id="metadata7">
+     id="metadata3768">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -52,9 +52,9 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       style="fill:none;stroke:#0000ff;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 661.09375,283.6875 -24.03125,0 0,-224.15625 -21.71875,0 0,0.09375 -222.9375,0 0,24.4375 -89.3125,0 0,-24.4375 -268.6875,0 0,223.84375 22.84375,0 0,88.96875 -22.84375,0 0,223.875 580.9375,0 0,0.0937 21.71875,0 0,-224.15625 24.03125,0 0,-88.5625 z"
-       id="rect3788"
+       style="fill:none;stroke:#0000ff;stroke-width:2.08536744;stroke-opacity:1"
+       d="m 698.45312,5.890625 -449.40625,0 0,21.03125 -89.09375,0 0,-21.03125 -428.37499,0 0,223.531245 -21.03125,0 0,90.875 21.03125,0 0,223.53125 966.87499,0 0,-224.375 -21.0625,0 0,-89.1875 21.0625,0 0,-224.374995 z"
+       id="rect5411"
        inkscape:connector-curvature="0" />
   </g>
 </svg>
