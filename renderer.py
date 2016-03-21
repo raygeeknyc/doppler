@@ -47,6 +47,7 @@ class App:
         self._screen_height = info.current_h
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
         self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
+	self._plot=pygame.draw.rect
 
     def __init__(self, surface, info):
         self.update_time_consumption = 0.0
@@ -132,9 +133,9 @@ class App:
         for x in xrange(len(self._cells)):
             for y in xrange(len(self._cells[x])):
                 if self._cells[x][y].ttl < start:
-                    pygame.draw.rect(self._surface, stillColor, (x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
-                                     y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
-                                     PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+                    self._plot(self._surface, stillColor, (x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
+                         y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
+                         PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
                     self._cells[x][y].ttl = expire
         self.idle_time_consumption = (time.time() - start)
 
