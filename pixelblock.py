@@ -3,15 +3,13 @@ import update_message
 class PixelBlock:
     CELL_WIDTH = 50  # This is a Pixels horizontal pitch
     CELL_HEIGHT = 50  # This is a Pixels vertical pitch
-    CELL_MARGIN = 5  # This is the padding within a Pixel
-    CELL_PLOT_WIDTH = CELL_WIDTH - CELL_MARGIN * 2
-    CELL_PLOT_HEIGHT = CELL_HEIGHT - CELL_MARGIN * 2
+    CELL_MARGIN = 5  # This is the padding around each edge within a Pixel
+    CELL_PLOT_WIDTH = CELL_WIDTH - (CELL_MARGIN * 2)
+    CELL_PLOT_HEIGHT = CELL_HEIGHT - (CELL_MARGIN * 2)
 
     def __init__(self, left, top, when):
       self.col = left
       self.row = top
-      self.plot_x = left * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN
-      self.plot_y = top * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN
       self.color = NEUTRAL_COLOR
       self.ttl = when
 

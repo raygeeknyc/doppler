@@ -26,6 +26,13 @@ CELL_IDLE_TIME = 1.3  # Set cells to idle after this many secs of inactivity
 # The maximum number of idle cells to age when there are pending updates
 MAX_AGED_PER_REDRAW = 900
 
+_CIRCLE = 1
+_RECT = 2
+
+# Set the shape of a plotted pixel to _CIRCLE or _RECT
+PIXEL_SHAPE = _CIRCLE
+PIXEL_SHAPE = _RECT
+
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
     return (usage[2]*resource.getpagesize())/1048576.0
@@ -46,8 +53,17 @@ class App:
         self._screen_width = info.current_w
         self._screen_height = info.current_h
         self._cols = self._screen_width / PixelBlock.CELL_WIDTH
-        self._rows = self._screen_height / PixelBlock.CELL_HEIGHT                                          
-	self._plot=pygame.draw.rect
+        self._rows = self._screen_height / PixelBlock.CELL_HEIGHT
+
+    def _plot_circle(self, color, topLeft):
+        pygame.draw.circle(self._surface, color,
+            (topLeft[0] * PixelBlock.CELL_WIDTH + (PixelBlock.CELL_WIDTH / 2), topLeft[1] * PixelBlock.CELL_HEIGHT + (PixelBlock.CELL_HEIGHT / 2)),
+            (PixelBlock.CELL_PLOT_WIDTH/2))
+
+    def _plot_rect(self, color, topLeft):
+	pygame.draw.rect(self._surface, color, (topLeft[0] * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
+            topLeft[1] * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
+            PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
 
     def __init__(self, surface, info):
         self.update_time_consumption = 0.0
@@ -55,6 +71,7 @@ class App:
         self.redraw_time_consumption = 0.0
         self.redraw_cycle_timestamp = 0.0
         self.redraw_cycle_time = 0.0
+        self._plot = self._plot_circle if (PIXEL_SHAPE == _CIRCLE) else self._plot_rect
 	self._initializeDisplay(surface, info)
         logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
         logging.debug("%d X %d cells\n" % (self._cols, self._rows))
@@ -133,16 +150,14 @@ class App:
         for x in xrange(len(self._cells)):
             for y in xrange(len(self._cells[x])):
                 if self._cells[x][y].ttl < start:
-                    self._plot(self._surface, stillColor, (x * PixelBlock.CELL_WIDTH + PixelBlock.CELL_MARGIN,
-                         y * PixelBlock.CELL_HEIGHT + PixelBlock.CELL_MARGIN,
-                         PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_HEIGHT))
+                    self._plot(stillColor, (x, y))
                     self._cells[x][y].ttl = expire
         self.idle_time_consumption = (time.time() - start)
 
         start = time.time()
 	redraw_count = len(self._changedCells)
         for cellToRefresh in self._changedCells:
-            pygame.draw.rect(self._surface, cellToRefresh.color, (cellToRefresh.plot_x, cellToRefresh.plot_y, PixelBlock.CELL_PLOT_WIDTH, PixelBlock.CELL_PLOT_WIDTH))
+            self._plot(cellToRefresh.color, (cellToRefresh.col, cellToRefresh.row))
         self._changedCells = []
         self._surface.unlock()
         self.redraw_time_consumption = (time.time() - start)
