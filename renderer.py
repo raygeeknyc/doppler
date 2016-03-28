@@ -21,7 +21,7 @@ import zlib
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
-CELL_IDLE_TIME = 1.3  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 0.8  # Set cells to idle after this many secs of inactivity
 
 # The maximum number of idle cells to age when there are pending updates
 MAX_AGED_PER_REDRAW = 900
