@@ -73,8 +73,8 @@ class App:
         self.redraw_cycle_time = 0.0
         self._plot = self._plot_circle if (PIXEL_SHAPE == _CIRCLE) else self._plot_rect
 	self._initializeDisplay(surface, info)
-        logging.debug("%d X %d pixels\n" % (self._screen_width, self._screen_height))
-        logging.debug("%d X %d cells\n" % (self._cols, self._rows))
+        logging.info("%d X %d pixels\n" % (self._screen_width, self._screen_height))
+        logging.info("%d X %d cells\n" % (self._cols, self._rows))
 	self._cellUpdates = []
         self._changedCells = []
         self.initializeCells()
@@ -229,7 +229,7 @@ class App:
 	self.getConfigRequest()
 
 def main(argv=[]):	
-	logging.getLogger().setLevel(logging.DEBUG if DEBUG_DISPLAY else logging.INFO)
+	logging.getLogger().setLevel(logging.INFO if DEBUG_DISPLAY else logging.INFO)
 
 	pygame.init()
 	pygame.mouse.set_visible(False)

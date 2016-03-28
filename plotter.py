@@ -261,51 +261,51 @@ def runTests():
 	logging.debug("%d X %d cells" % (len(plotter._cells), len(plotter._cells[0])))
 	plotter.refreshCells()
 	logging.info("testUpdateCellStates")
-	plotter.testUpdateCellStates(30,10)
+	plotter.testUpdateCellStates(20,07)
 	plotter.testUpdateCellStates(3,10)
 	plotter.testUpdateCellStates(10, plotter.ROWS-26)
 	plotter.testUpdateCellStates(20, 5)
-	plotter.testUpdateCellStates(plotter.COLUMNS-5, 15)
+	plotter.testUpdateCellStates(plotter.COLUMNS-5, 5)
 	start = time.time()
 	plotter.refreshCells()
 	logging.info("refresh took %d" % (time.time() - start))
 	logging.info("recordTestUpdates")
 	testUpdates = []
 	plotter.recordTestUpdates(testUpdates,10,10)
-	plotter.recordTestUpdates(testUpdates,20,18)
-	plotter.recordTestUpdates(testUpdates,20,40)
+	plotter.recordTestUpdates(testUpdates,20,8)
+	plotter.recordTestUpdates(testUpdates,20,10)
 	plotter.recordTestUpdates(testUpdates,25,10)
-	plotter.recordTestUpdates(testUpdates,30,35)
+	plotter.recordTestUpdates(testUpdates,20,15)
 
-	plotter.recordTestUpdates(testUpdates,33,21)
-	plotter.recordTestUpdates(testUpdates,34,22)
+	plotter.recordTestUpdates(testUpdates,23,11)
+	plotter.recordTestUpdates(testUpdates,24,12)
 
-	plotter.recordTestUpdates(testUpdates,25,21)
-	plotter.recordTestUpdates(testUpdates,25,30)
-
-	plotter.recordTestUpdates(testUpdates,25,21)
-	plotter.recordTestUpdates(testUpdates,25,30)
+	plotter.recordTestUpdates(testUpdates,25,11)
+	plotter.recordTestUpdates(testUpdates,25,10)
 
 	plotter.recordTestUpdates(testUpdates,25,21)
-	plotter.recordTestUpdates(testUpdates,25,30)
+	plotter.recordTestUpdates(testUpdates,25,10)
 
-	plotter.recordTestUpdates(testUpdates,26,21)
-	plotter.recordTestUpdates(testUpdates,26,30)
+	plotter.recordTestUpdates(testUpdates,15,11)
+	plotter.recordTestUpdates(testUpdates,15,10)
 
-	plotter.recordTestUpdates(testUpdates,26,21)
-	plotter.recordTestUpdates(testUpdates,26,30)
+	plotter.recordTestUpdates(testUpdates,16,11)
+	plotter.recordTestUpdates(testUpdates,16,10)
 
-	plotter.recordTestUpdates(testUpdates,26,21)
-	plotter.recordTestUpdates(testUpdates,26,30)
+	plotter.recordTestUpdates(testUpdates,16,11)
+	plotter.recordTestUpdates(testUpdates,16,10)
 
-	plotter.recordTestUpdates(testUpdates,27,21)
-	plotter.recordTestUpdates(testUpdates,27,30)
+	plotter.recordTestUpdates(testUpdates,16,11)
+	plotter.recordTestUpdates(testUpdates,16,10)
 
-	plotter.recordTestUpdates(testUpdates,27,21)
-	plotter.recordTestUpdates(testUpdates,27,30)
+	plotter.recordTestUpdates(testUpdates,17,11)
+	plotter.recordTestUpdates(testUpdates,17,10)
 
-	plotter.recordTestUpdates(testUpdates,28,21)
-	plotter.recordTestUpdates(testUpdates,28,30)
+	plotter.recordTestUpdates(testUpdates,17,11)
+	plotter.recordTestUpdates(testUpdates,17,10)
+
+	plotter.recordTestUpdates(testUpdates,18,11)
+	plotter.recordTestUpdates(testUpdates,18,10)
 
 	plotter.recordTestUpdates(testUpdates,plotter.COLUMNS-6, 3)
 
