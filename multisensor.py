@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 "Install install freenect libusb libusb=dev libusb-dev libfreenect-demos python-freenect python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
-"Test with import sensor;reload(sensor)"
+"Test with import multisensor;reload(multisensor)"
 
 import collections
 import config
 import copy
 import errno
 from itertools import chain
-import freenect
 import logging
 import numpy
 import random
@@ -60,10 +59,10 @@ class Stitcher(sensor.BaseStitcher):
 
 		self._depth_maps = [[], [], []]
 
-		self._depth_timestamps = [None, None, None]
+		self._depth_timestamps = [[None], [None], [None]]
 
 		# Get initial depth maps
-		self.getSensorDepthMaps()
+		self._getSensorDepthMaps()
 
 	def __init__(self, kinect_left_index, kinect_center_index, kinect_right_index, testing = True):
 		self._kinect_left = kinect_left_index
@@ -80,16 +79,13 @@ class Stitcher(sensor.BaseStitcher):
 		else:
 			return self._depth_maps[self._kinect_right][spot_subrow][spot_subcol - CENTER_SENSOR_EDGE]
 
-	def getSensorDepthMap(self, sensor_idx):
-		self._depth_maps[sensor_idx], self._depth_timestamps[sensor_idx] = freenect.sync_get_depth(sensor_idx)
-
-	def getSensorDepthMaps(self):
+	def _getSensorDepthMaps(self):
 		start = time.time()
 		if not self._testing:
 			logging.debug("Getting depth maps from 3 sensors")
-			self.getSensorDepthMap(self._kinect_left)
-			self.getSensorDepthMap(self._kinect_center)
-			self.getSensorDepthMap(self._kinect_right)
+			self._getSensorDepthMap(self._kinect_left)
+			self._getSensorDepthMap(self._kinect_center)
+			self._getSensorDepthMap(self._kinect_right)
 		else:
 			logging.debug("Getting 3 dummy depth maps")
 			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = sensor.getDummyDepthMap()
@@ -159,10 +155,6 @@ class Stitcher(sensor.BaseStitcher):
 			return (1, self.MAXIMUM_SENSOR_DEPTH_READING)
 		spot_depth = int(SAMPLER(self._samples_for_cell))
 		return (len(self._samples_for_cell), spot_depth)
-
-	def updateDepthMaps(self):
-		self.getSensorDepthMaps()
-		self.plotMappedDepths()
 
 	def initPlotter(self):
 		self.plotter = plotter.Plotter()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 "Install install libusb libusb-dev python-numpy python-support python-opencv python-matplotib python-matplotlib"
 
-"Test with import sensor;reload(sensor)"
+"Test with import singlesensor;reload(singlesensor)"
 
 import collections
 import config
