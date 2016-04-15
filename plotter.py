@@ -146,12 +146,12 @@ class Plotter:
 		start = time.time()
 		if config.broadcasts:
 			renderers = config.broadcasts
-			logging.info('Broadcasting to %s' % str(renderers))
+			logging.debug('Broadcasting to %s' % str(renderers))
 		else:
 			renderers = [self._getRendererAddress(zone[0], zone[1])]
-			logging.info('Sending to %s' % str(renderers))
+			logging.debug('Sending to %s' % str(renderers))
 		for renderer in renderers:
-			logging.info("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
+			logging.debug("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
 			if not renderer:
 				logging.error("No renderer for zone %s" % str(zone))
 			else:
