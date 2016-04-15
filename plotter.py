@@ -143,15 +143,21 @@ class Plotter:
     def _sendUpdatesForZone(self, zone, cellStates):
 	"Send the cellStates to the server at (zone) if we have an address for it."
 	if len(cellStates):
-		#logging.debug("Sending %d updates to zone %s" % (len(cellStates), str(zone)))
 		start = time.time()
-		renderer = self._getRendererAddress(zone[0], zone[1])
-		if not renderer:
-			logging.error("No renderer for zone %s" % str(zone))
+		if config.broadcasts:
+			renderers = config.broadcasts
+			logging.info('Broadcasting to %s' % str(renderers))
 		else:
-			start = time.time()
-			self._sendUpdatesToRenderer(renderer, cellStates)
-			self._timeSending += (time.time() - start)
+			renderers = [self._getRendererAddress(zone[0], zone[1])]
+			logging.info('Sending to %s' % str(renderers))
+		for renderer in renderers:
+			logging.info("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
+			if not renderer:
+				logging.error("No renderer for zone %s" % str(zone))
+			else:
+				start = time.time()
+				self._sendUpdatesToRenderer(renderer, cellStates)
+				self._timeSending += (time.time() - start)
 	else:
 		#logging.debug("Skipping empty updates for zone %s" % str(zone))
 		pass
