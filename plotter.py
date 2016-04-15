@@ -12,13 +12,13 @@ import time
 import zlib
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_APPROACH_THRESHOLD = 80
-FAST_RECEDE_THRESHOLD = -80
+FAST_APPROACH_THRESHOLD = 40
+FAST_RECEDE_THRESHOLD = -40
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_APPROACH_THRESHOLD = 30
-SLOW_RECEDE_THRESHOLD = -30
+SLOW_APPROACH_THRESHOLD = 20
+SLOW_RECEDE_THRESHOLD = -20
 # The minimum change in absolute distance that we see as motion
-DISTANCE_MOTION_THRESHOLD = 20
+DISTANCE_MOTION_THRESHOLD = 5
 
 # How many cell updates to send in one message to a renderer
 #MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
@@ -104,7 +104,7 @@ class Plotter:
 	# This will interleave updates among zones so that all zones with pending
 	# updates in local row 0 will be sent those updates before any of row 1
 	# are sent. This will reduce blockiness in update rendering across all
-	# 3 renderers.
+	# N renderers.
 
 	currentZone =  self._zoneCoordForLocalCell((0, 0))[0]
 	currentZoneUpdates = collections.deque()

@@ -18,7 +18,7 @@ import time
 import sensor
 
 # The maximum update frequency
-TARGET_FPS = 4
+TARGET_FPS = 19
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 

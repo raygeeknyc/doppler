@@ -18,7 +18,7 @@ import time
 import sensor
 
 # The maximum update frequency
-TARGET_FPS = 3
+TARGET_FPS = 20
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -175,7 +175,7 @@ def main(argv):
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
 	testing = len(argv) > 1 and argv[1] == "debug"
-	stitcher=Stitcher(0,1,2,testing=testing)
+	stitcher=Stitcher(1,0,2,testing=testing)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()
