@@ -55,8 +55,6 @@ class Stitcher(sensor.BaseStitcher):
 	def _getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell."
 		# return max(self._depth_maps[0][spot_subrow][spot_subcol]) # webcam version
-		logging.debug(len(self._depth_maps[0][spot_subrow]))
-		logging.debug(spot_subcol)
 		return self._depth_maps[0][spot_subcol][spot_subrow]
 
 	def _getSensorDepthMaps(self):
