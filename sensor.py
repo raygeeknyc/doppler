@@ -16,9 +16,9 @@ import sys
 import time
 
 # The maximum update frequency
-TARGET_FPS = None
+TARGET_FPS = 10
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
-_MAX_REFRESH_FREQUENCY = None
+_MAX_REFRESH_FREQUENCY = 1/TARGET_FPS
 
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = None

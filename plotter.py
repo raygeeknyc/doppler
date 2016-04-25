@@ -12,13 +12,13 @@ import time
 import zlib
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_APPROACH_THRESHOLD = 40
-FAST_RECEDE_THRESHOLD = -40
+FAST_APPROACH_THRESHOLD = 21
+FAST_RECEDE_THRESHOLD = -21
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_APPROACH_THRESHOLD = 20
-SLOW_RECEDE_THRESHOLD = -20
+SLOW_APPROACH_THRESHOLD = 15
+SLOW_RECEDE_THRESHOLD = -15
 # The minimum change in absolute distance that we see as motion
-DISTANCE_MOTION_THRESHOLD = 5
+DISTANCE_MOTION_THRESHOLD = 9
 
 # How many cell updates to send in one message to a renderer
 #MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
@@ -146,12 +146,12 @@ class Plotter:
 		start = time.time()
 		if config.broadcasts:
 			renderers = config.broadcasts
-			logging.debug('Broadcasting to %s' % str(renderers))
+			logging.info('Broadcasting to %s' % str(renderers))
 		else:
 			renderers = [self._getRendererAddress(zone[0], zone[1])]
-			logging.debug('Sending to %s' % str(renderers))
+			logging.info('Sending to %s' % str(renderers))
 		for renderer in renderers:
-			logging.debug("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
+			logging.info("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
 			if not renderer:
 				logging.error("No renderer for zone %s" % str(zone))
 			else:

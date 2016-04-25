@@ -1,7 +1,7 @@
 #!/bin/bash
-SUBNET="192.168.1"
-for node in 101 105 102 106 103 107 104 108
+SUBNET="192.168.0"
+for node in 108 107 106 105 104 103 102 101
 do
 	echo ${SUBNET}.${node}
-	ssh root@${SUBNET}.${node} "cd doppler;killall -9 run_renderer.sh;killall -9 python;./run_renderer.sh &"
+	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@${SUBNET}.${node} "cd doppler;killall -9 run_renderer.sh;killall -9 python;nohup ./run_renderer.sh &"
 done
