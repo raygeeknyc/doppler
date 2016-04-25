@@ -11,10 +11,11 @@ RENDERER_CONNECT_TIMEOUT_SECS = 2.0
 MAXIMUM_RENDERER_CONNECT_RETRIES = 10 
 # We have 4 columns and 2 rows in the original installaton and
 # 1 column and 1 row in the portable installation.
-# ZONES=[4,2]
-ZONES=[1,1]
+ZONES=[4,2]
+#ZONES=[1,1]
 # The maximum chunk of a config that a plotter receives from the first
 # renderer at a time.
 RENDERER_CONFIG_MAX_LENGTH = 512
 # A list of renderer addresses to receive every update, leave empty for one renderer per zone
-broadcasts = ['192.168.0.101', '192.168.0.102', '192.168.0.103', '192.168.0.104']
+broadcasts = []
+# broadcasts = ['192.168.0.101', '192.168.0.102', '192.168.0.103', '192.168.0.104']

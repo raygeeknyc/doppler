@@ -106,6 +106,7 @@ class BaseStitcher(object):
 		for spot_col in xrange(self.plotter.COLUMNS):
 			flipped_col = self.COL_LIMIT - spot_col
 			for spot_row in xrange(self.plotter.ROWS):
+				logging.debug("col: %f row %d" % (flipped_col, spot_row))
 				spot_area, spot_depth = self.calculateMergedDepth(flipped_col, spot_row)
 				if spot_depth != self.MAXIMUM_SENSOR_DEPTH_READING:
 					self.plotter.updateCellState(spot_col, spot_row, spot_depth)

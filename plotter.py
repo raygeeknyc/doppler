@@ -148,6 +148,7 @@ class Plotter:
 			renderers = config.broadcasts
 			logging.info('Broadcasting to %s' % str(renderers))
 		else:
+			logging.info('Not broadcasting')
 			renderers = [self._getRendererAddress(zone[0], zone[1])]
 			logging.info('Sending to %s' % str(renderers))
 		for renderer in renderers:
@@ -159,7 +160,7 @@ class Plotter:
 				self._sendUpdatesToRenderer(renderer, cellStates)
 				self._timeSending += (time.time() - start)
 	else:
-		#logging.debug("Skipping empty updates for zone %s" % str(zone))
+		logging.debug("Skipping empty updates for zone %s" % str(zone))
 		pass
 
     def _closeRenderer(self, renderer):
