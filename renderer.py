@@ -137,6 +137,7 @@ class App:
   
     def _plotExpiredCells(self, stillColor):
         self._surface.lock()
+        start = time.time()
         for x in xrange(len(self._cells)):
             for y in xrange(len(self._cells[x])):
                 if (self._cells[x][y].ttl) and (self._cells[x][y].ttl < start):
@@ -145,7 +146,7 @@ class App:
         self._surface.unlock()
 
     def redraw(self):                          
-        """Redraw all idle cells and updated cells, clear the updated list.
+        """Redraw all idle cells and updated cells, clear the updated list."""
 	logging.debug("redraw()")
         self.redraw_cycle_time = time.time() - self.redraw_cycle_timestamp
         self.redraw_cycle_timestamp = time.time()
