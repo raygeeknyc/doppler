@@ -23,9 +23,7 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
 CELL_IDLE_TIME = 0.8  # Set cells to idle after this many secs of inactivity
 
-# The maximum number of idle cells to age when there are pending updates
-MAX_AGED_PER_REDRAW = 900
-
+# The shapes that we know how to render
 _CIRCLE = 1
 _RECT = 2
 
@@ -137,29 +135,33 @@ class App:
         for cellMessage in updateData:
           self._cellUpdates.append(update_message.CellUpdate.fromText(cellMessage))
   
+    def _plotExpiredCells(self, stillColor):
+        self._surface.lock()
+        for x in xrange(len(self._cells)):
+            for y in xrange(len(self._cells[x])):
+                if (self._cells[x][y].ttl) and (self._cells[x][y].ttl < start):
+                    self._plot(stillColor, (x, y))
+                    self._cells[x][y].ttl = 0
+        self._surface.unlock()
+
     def redraw(self):                          
-        """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
+        """Redraw all idle cells and updated cells, clear the updated list.
 	logging.debug("redraw()")
         self.redraw_cycle_time = time.time() - self.redraw_cycle_timestamp
         self.redraw_cycle_timestamp = time.time()
 
         start = time.time()
         stillColor = App._colorForState(update_message.CellState.CHANGE_STILL)
-        self._surface.lock()
-        expire = start + CELL_IDLE_TIME
-        for x in xrange(len(self._cells)):
-            for y in xrange(len(self._cells[x])):
-                if self._cells[x][y].ttl < start:
-                    self._plot(stillColor, (x, y))
-                    self._cells[x][y].ttl = expire
+        self._plotExpiredCells(stillColor)
         self.idle_time_consumption = (time.time() - start)
 
         start = time.time()
 	redraw_count = len(self._changedCells)
+        self._surface.lock()
         for cellToRefresh in self._changedCells:
             self._plot(cellToRefresh.color, (cellToRefresh.col, cellToRefresh.row))
-        self._changedCells = []
         self._surface.unlock()
+        self._changedCells = []
         self.redraw_time_consumption = (time.time() - start)
 	return redraw_count
 
@@ -205,11 +207,11 @@ class App:
     def updateCells(self):
 	logging.debug("updateCells()")
 	now = time.time()
-        expire = now + CELL_IDLE_TIME
+        expireAt = now + CELL_IDLE_TIME
 	for cellUpdate in self._cellUpdates:
                 x,y = cellUpdate.x, cellUpdate.y
       		self._cells[x][y].color = App._colorForState(cellUpdate.state)
-      		self._cells[x][y].ttl = expire
+      		self._cells[x][y].ttl = expireAt
 	      	self._changedCells.append(self._cells[x][y])
 	self._cellUpdates = []
 

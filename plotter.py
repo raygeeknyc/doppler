@@ -113,7 +113,7 @@ class Plotter:
 			if self._cells[col][row][2]:
 				remoteCellCoord = self._zoneCoordForLocalCell((col, row))
 				if (remoteCellCoord[0] != currentZone) or len(currentZoneUpdates) >= MAXIMUM_CELL_UPDATES_PER_MESSAGE:
-					#logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
+					logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
 					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
 					currentZoneUpdates.clear()
 					currentZone = remoteCellCoord[0]
@@ -121,7 +121,7 @@ class Plotter:
 	  			currentZoneUpdates.append(remoteCellUpdate)
 				self._cells[col][row][2] = False
 	self._sendUpdatesForZone(currentZone, currentZoneUpdates)
-	#logging.debug("Time sending %d" % self._timeSending)
+	logging.debug("Time sending %d" % self._timeSending)
 	
     def sendTestUpdates(self, localCellStates):
 	"Accumulate cellUpdates by zone, send per zone with transformed coordinates."
@@ -163,7 +163,7 @@ class Plotter:
 		pass
 
     def _closeRenderer(self, renderer):
-	#logging.debug("Closing connection to renderer %s" % str(renderer))
+	logging.debug("Closing connection to renderer %s" % str(renderer))
 	renderer.close()
 	
     def _sendUpdatesToRenderer(self, renderer, cellStates):
