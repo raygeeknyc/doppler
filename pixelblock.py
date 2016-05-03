@@ -1,9 +1,9 @@
 import update_message
 
 class PixelBlock:
-    CELL_WIDTH = 50  # This is a Pixels horizontal pitch
-    CELL_HEIGHT = 50  # This is a Pixels vertical pitch
-    CELL_MARGIN = 5  # This is the padding around each edge within a Pixel
+    CELL_WIDTH = 30  # This is a Pixels horizontal pitch
+    CELL_HEIGHT = 30  # This is a Pixels vertical pitch
+    CELL_MARGIN = 4  # This is the padding around each edge within a Pixel
     CELL_PLOT_WIDTH = CELL_WIDTH - (CELL_MARGIN * 2)
     CELL_PLOT_HEIGHT = CELL_HEIGHT - (CELL_MARGIN * 2)
 

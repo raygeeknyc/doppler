@@ -18,7 +18,7 @@ import time
 import sensor
 
 # The maximum update frequency
-TARGET_FPS = 19
+TARGET_FPS = sensor.TARGET_FPS
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
@@ -55,7 +55,7 @@ class Stitcher(sensor.BaseStitcher):
 	def _getDepthAtVirtualCell(self, spot_subcol, spot_subrow):
 		"Return the value at the mapped cell."
 		# return max(self._depth_maps[0][spot_subrow][spot_subcol]) # webcam version
-		return self._depth_maps[0][spot_subrow][spot_subcol]
+		return self._depth_maps[0][spot_subcol][spot_subrow]
 
 	def _getSensorDepthMaps(self):
 		start = time.time()
@@ -139,7 +139,7 @@ def main(argv):
 	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("SENSOR_COLUMNS, SENSOR_ROWS = %d, %d" % (SENSOR_COLUMNS, SENSOR_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
-	stitcher=Stitcher(testing=False)
+	stitcher=Stitcher(testing=DEBUG_SENSOR)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()

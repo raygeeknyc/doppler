@@ -28,8 +28,8 @@ _CIRCLE = 1
 _RECT = 2
 
 # Set the shape of a plotted pixel to _CIRCLE or _RECT
-PIXEL_SHAPE = _CIRCLE
 PIXEL_SHAPE = _RECT
+PIXEL_SHAPE = _CIRCLE
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
