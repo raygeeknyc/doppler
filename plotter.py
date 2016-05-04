@@ -22,7 +22,7 @@ DISTANCE_MOTION_THRESHOLD = 9
 
 # How many cell updates to send in one message to a renderer
 #MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
-MAXIMUM_CELL_UPDATES_PER_MESSAGE = 700  # This should be < 1400 bytes
+MAXIMUM_CELL_UPDATES_PER_MESSAGE = 1024
 
 class Plotter:
     def cellStateForChange(self, distance_delta):
