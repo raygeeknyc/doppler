@@ -53,7 +53,12 @@ class Plotter:
 	self._cells = None
 	self.PER_ZONE_CELL_DIMENSIONS = []
         self.ZONES = config.ZONES[0]*config.ZONES[1]
-        self._zoneUpdates = [[collections.deque()]*config.ZONES[1]]*config.ZONES[0]
+	self._zoneUpdates = []
+	for col in xrange(config.ZONES[0]):
+		col_coll = []
+		for row in xrange(config.ZONES[1]):
+			col_coll.append(collections.deque())
+		self._zoneUpdates.append(col_coll)
 	logging.debug("%d,%d renderers" % (config.ZONES[0], config.ZONES[1]))
 	self.ROWS = None
 	self.COLUMNS = None
@@ -159,11 +164,11 @@ class Plotter:
 			renderers = config.broadcasts
 			logging.info('Broadcasting to %s' % str(renderers))
 		else:
-			logging.info('Not broadcasting')
+			logging.debug('Not broadcasting')
 			renderers = [self._getRendererAddress(zone[0], zone[1])]
-			logging.info('Sending to %s' % str(renderers))
+			logging.debug('Sending to %s' % str(renderers))
 		for renderer in renderers:
-			logging.info("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
+			logging.debug("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
 			if not renderer:
 				logging.error("No renderer for zone %s" % str(zone))
 			else:
