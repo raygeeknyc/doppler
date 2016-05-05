@@ -22,7 +22,7 @@ DISTANCE_MOTION_THRESHOLD = 9
 
 # How many cell updates to send in one message to a renderer
 #MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
-MAXIMUM_CELL_UPDATES_PER_MESSAGE = 700  # This should be < 1400 bytes
+MAXIMUM_CELL_UPDATES_PER_MESSAGE = 1024
 
 class Plotter:
     def cellStateForChange(self, distance_delta):
@@ -52,6 +52,14 @@ class Plotter:
 	self._timeSending = 0
 	self._cells = None
 	self.PER_ZONE_CELL_DIMENSIONS = []
+        self.ZONES = config.ZONES[0]*config.ZONES[1]
+	self._zoneUpdates = []
+	for col in xrange(config.ZONES[0]):
+		col_coll = []
+		for row in xrange(config.ZONES[1]):
+			col_coll.append(collections.deque())
+		self._zoneUpdates.append(col_coll)
+	logging.debug("%d,%d renderers" % (config.ZONES[0], config.ZONES[1]))
 	self.ROWS = None
 	self.COLUMNS = None
 	self._setupSocket()
@@ -98,29 +106,37 @@ class Plotter:
 			  update_message.CellState.CHANGE_STILL, now, True]
 	logging.debug("initAllCellsState set %d cols X %d rows, %d cells" % (len(self._cells), len(self._cells[0]), (len(self._cells) * len(self._cells[0]))))
 
+    def _buildZoneUpdates(self):
+        "Traverse pending updates and batch them by their destination zone."
+	for zone_x in xrange(config.ZONES[0]):
+		for zone_y in xrange(config.ZONES[1]):
+			currentZoneUpdates = self._zoneUpdates[zone_x][zone_y]
+			currentZoneUpdates.clear()
+			for cell_x in xrange(self.PER_ZONE_CELL_DIMENSIONS[0]):
+				x = zone_x * self.PER_ZONE_CELL_DIMENSIONS[0] + cell_x
+				for cell_y in xrange(self.PER_ZONE_CELL_DIMENSIONS[1]):
+					y = zone_y * self.PER_ZONE_CELL_DIMENSIONS[1] + cell_y
+					if self._cells[x][y][2]:
+	  					remoteCellUpdate = update_message.CellUpdate(self._cells[x][y][1], (cell_x, cell_y))
+	  					currentZoneUpdates.append(remoteCellUpdate)
+						self._cells[x][y][2] = False
+	
+
+    def _sendZoneUpdates(self):
+	"Send pending zone updates."
+	for zone_x in xrange(config.ZONES[0]):
+		for zone_y in xrange(config.ZONES[1]):
+			currentZoneUpdates = self._zoneUpdates[zone_x][zone_y]
+			self._sendUpdatesForZone((zone_x, zone_y), currentZoneUpdates)
+
     def refreshCells(self):
-	"Send pending updates, by row and column."
+	"Send pending cell updates, by row and column."
 
-	# This will interleave updates among zones so that all zones with pending
-	# updates in local row 0 will be sent those updates before any of row 1
-	# are sent. This will reduce blockiness in update rendering across all
+	# This does not interleave updates among zones, it builds all updates an then sends them
+	# This may result in blockiness in update rendering across all
 	# N renderers.
-
-	currentZone =  self._zoneCoordForLocalCell((0, 0))[0]
-	currentZoneUpdates = collections.deque()
-	for row in range(0, self.ROWS):
-		for col in range(0, self.COLUMNS):
-			if self._cells[col][row][2]:
-				remoteCellCoord = self._zoneCoordForLocalCell((col, row))
-				if (remoteCellCoord[0] != currentZone) or len(currentZoneUpdates) >= MAXIMUM_CELL_UPDATES_PER_MESSAGE:
-					logging.debug("Break on zone %s -> %s" % (str(currentZone), str(remoteCellCoord[0])))
-					self._sendUpdatesForZone(currentZone, currentZoneUpdates)
-					currentZoneUpdates.clear()
-					currentZone = remoteCellCoord[0]
-	  			remoteCellUpdate = update_message.CellUpdate(self._cells[col][row][1], (remoteCellCoord[1][0], remoteCellCoord[1][1]))
-	  			currentZoneUpdates.append(remoteCellUpdate)
-				self._cells[col][row][2] = False
-	self._sendUpdatesForZone(currentZone, currentZoneUpdates)
+	self._buildZoneUpdates()
+	self._sendZoneUpdates()
 	logging.debug("Time sending %d" % self._timeSending)
 	
     def sendTestUpdates(self, localCellStates):
@@ -148,11 +164,11 @@ class Plotter:
 			renderers = config.broadcasts
 			logging.info('Broadcasting to %s' % str(renderers))
 		else:
-			logging.info('Not broadcasting')
+			logging.debug('Not broadcasting')
 			renderers = [self._getRendererAddress(zone[0], zone[1])]
-			logging.info('Sending to %s' % str(renderers))
+			logging.debug('Sending to %s' % str(renderers))
 		for renderer in renderers:
-			logging.info("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
+			logging.debug("Sending %d updates to zone %s address %s" % (len(cellStates), str(zone), renderer))
 			if not renderer:
 				logging.error("No renderer for zone %s" % str(zone))
 			else:

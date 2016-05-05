@@ -6,5 +6,5 @@ fi
 # This kill should only be run on standalone, dedicated renderer nodes
 killall -9 python
 while true;do
-  python renderer.py
+ python renderer.py
 done

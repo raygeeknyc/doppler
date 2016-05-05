@@ -21,7 +21,7 @@ import zlib
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
-CELL_IDLE_TIME = 0.8  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 2  # Set cells to idle after this many secs of inactivity
 
 # The shapes that we know how to render
 _CIRCLE = 1

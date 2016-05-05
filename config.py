@@ -18,4 +18,4 @@ ZONES=[4,2]
 RENDERER_CONFIG_MAX_LENGTH = 512
 # A list of renderer addresses to receive every update, leave empty for one renderer per zone
 broadcasts = []
-# broadcasts = ['192.168.0.101', '192.168.0.102', '192.168.0.103', '192.168.0.104']
+#broadcasts = ['192.168.0.101', '192.168.0.102', '192.168.0.103', '192.168.0.104']
