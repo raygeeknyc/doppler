@@ -135,7 +135,7 @@ class App:
         for cellMessage in updateData:
           self._cellUpdates.append(update_message.CellUpdate.fromText(cellMessage))
   
-    def _draw(x, y, RGB):
+    def _draw(self, x, y, RGB):
         self._plot(RGB, (x, y))
 
     def _plotExpiredCells(self, stillColor):

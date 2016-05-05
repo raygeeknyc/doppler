@@ -31,7 +31,7 @@ class LedApp(App):
         self._cols = self._screen_width
         self._rows = self._screen_height
 
-    def _draw(x, y, RGB):
+    def _draw(self, x, y, RGB):
         self._surface.SetPixel(x, y, RGB[0], RGB[1], RGB[2])
 
     def _updateDisplay(self):
