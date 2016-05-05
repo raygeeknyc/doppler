@@ -31,30 +31,8 @@ class LedApp(App):
         self._cols = self._screen_width
         self._rows = self._screen_height
 
-    def redraw(self):                          
-        """Redraw all idle and then updated cells, remove cells from the idle and update lists."""
-	logging.debug("redraw()")
-        self.redraw_cycle_time = time.time() - self.redraw_cycle_timestamp
-        self.redraw_cycle_timestamp = time.time()
-
-        start = time.time()
-        stillColor = pixelblock.NEUTRAL_COLOR
-        expire = start + renderer.CELL_IDLE_TIME
-        for x in xrange(len(self._cells)):
-            for y in xrange(len(self._cells[x])):
-                if self._cells[x][y].ttl < start:
-                    self._surface.SetPixel(x, y, stillColor[0], stillColor[1], stillColor[2])
-                    self._cells[x][y].ttl = expire
-        self.idle_time_consumption = (time.time() - start)
-
-        start = time.time()
-	redraw_count = len(self._changedCells)
-        for cellToRefresh in self._changedCells:
-            self._surface.SetPixel(cellToRefresh.col, cellToRefresh.row,
-              cellToRefresh.color[0], cellToRefresh.color[1], cellToRefresh.color[2])
-        self._changedCells = []
-        self.redraw_time_consumption = (time.time() - start)
-	return redraw_count
+    def _draw(x, y, RGB):
+        self._surface.SetPixel(x, y, RGB[0], RGB[1], RGB[2])
 
     def _updateDisplay(self):
         pass

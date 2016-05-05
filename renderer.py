@@ -135,13 +135,16 @@ class App:
         for cellMessage in updateData:
           self._cellUpdates.append(update_message.CellUpdate.fromText(cellMessage))
   
+    def _draw(x, y, RGB):
+        self._plot(RGB, (x, y))
+
     def _plotExpiredCells(self, stillColor):
         self._surface.lock()
         start = time.time()
         for x in xrange(len(self._cells)):
             for y in xrange(len(self._cells[x])):
                 if (self._cells[x][y].ttl) and (self._cells[x][y].ttl < start):
-                    self._plot(stillColor, (x, y))
+                    self._draw(x, y, stillColor)
                     self._cells[x][y].ttl = 0
         self._surface.unlock()
 
@@ -160,7 +163,7 @@ class App:
 	redraw_count = len(self._changedCells)
         self._surface.lock()
         for cellToRefresh in self._changedCells:
-            self._plot(cellToRefresh.color, (cellToRefresh.col, cellToRefresh.row))
+            self._draw(cellToRefresh.col, cellToRefresh.row, cellToRefresh.color)
         self._surface.unlock()
         self._changedCells = []
         self.redraw_time_consumption = (time.time() - start)
