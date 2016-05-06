@@ -170,12 +170,16 @@ class Stitcher(sensor.BaseStitcher):
 
 def main(argv):
 	print("multisensor:main()")
-	logging.getLogger().setLevel(logging.INFO)
+        if len(sys.argv) > 1 and sys.argv[1] == "debug":
+                DEBUG_SENSOR = True
+        else:
+                DEBUG_SENSOR = False
+        logging.getLogger().setLevel(logging.DEBUG if DEBUG_SENSOR else logging.INFO)
+        logging.debug("debugging")
 	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
-	testing = len(argv) > 1 and argv[1] == "debug"
-	stitcher=Stitcher(1,0,2,testing=testing)
+        stitcher=Stitcher(1, 0, 2, testing=DEBUG_SENSOR)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()
