@@ -88,9 +88,9 @@ class Stitcher(sensor.BaseStitcher):
 			self._getSensorDepthMap(self._kinect_right)
 		else:
 			logging.debug("Getting 3 dummy depth maps")
-			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = sensor.getDummyDepthMap()
-			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = sensor.getDummyDepthMap()
-			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = sensor.getDummyDepthMap()
+			self._depth_maps[self._kinect_left], self._depth_timestamps[self._kinect_left] = sensor._getDummyDepthMap()
+			self._depth_maps[self._kinect_center], self._depth_timestamps[self._kinect_center] = sensor._getDummyDepthMap()
+			self._depth_maps[self._kinect_right], self._depth_timestamps[self._kinect_right] = sensor._getDummyDepthMap()
 		logging.debug("Got 3 maps in %f secs" % (time.time() - start))
 
 	def plotMappedDepths(self):
