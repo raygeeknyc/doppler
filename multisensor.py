@@ -22,6 +22,11 @@ TARGET_FPS = sensor.TARGET_FPS
 # this throttles the update/refresh cycle to protect the renderers from being overwhelmed
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
+# The device indices of our 3 sensors
+KINECT_INDEX_LEFT = 1
+KINECT_INDEX_CENTER = 2
+KINECT_INDEX_RIGHT = 0
+
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
 SAMPLER = None
@@ -179,7 +184,7 @@ def main(argv):
 	logging.info("Starting up with %d x %d renderers" % (config.ZONES[0], config.ZONES[1]))
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
-        stitcher=Stitcher(1, 0, 2, testing=DEBUG_SENSOR)
+        stitcher=Stitcher(KINECT_INDEX_LEFT, KINECT_INDEX_CENTER, KINECT_INDEX_RIGHT, testing=DEBUG_SENSOR)
 	stitcher.initPlotter()
 	while True:
 		start = time.time()
