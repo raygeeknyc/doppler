@@ -23,9 +23,9 @@ TARGET_FPS = sensor.TARGET_FPS
 _MAX_REFRESH_FREQUENCY = 1.0/TARGET_FPS
 
 # The device indices of our 3 sensors
-KINECT_INDEX_LEFT = 1
-KINECT_INDEX_CENTER = 2
-KINECT_INDEX_RIGHT = 0
+KINECT_INDEX_LEFT = 0
+KINECT_INDEX_CENTER = 1
+KINECT_INDEX_RIGHT = 2
 
 # When falling back to a SAMPLER, sample an entire mapped pixel or just the center column
 SAMPLE_FULL_AREA = False
@@ -34,11 +34,11 @@ SAMPLER = None
 #SAMPLER = numpy.mean
 
 # The number of pixels to cut out of the right side of the left sensor's map
-LEFT_SENSOR_MARGIN = 80
+LEFT_SENSOR_MARGIN = 310
 # The number of pixels to cut out of the right side of the center sensor's map
-CENTER_SENSOR_MARGIN = 150
+CENTER_SENSOR_MARGIN = 380
 # The number of pixels to cut out of the right side of the right sensor's map
-RIGHT_SENSOR_MARGIN = 7
+RIGHT_SENSOR_MARGIN = 0
 # The known width of a sensor's depth map
 SENSOR_COLUMNS = 640
 # The known height of a sensor's depth map

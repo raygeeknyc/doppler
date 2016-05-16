@@ -12,7 +12,12 @@ for devIdx in range(0, freenect.num_devices(ctx)):
     if not dev:
         freenect.error_open_device()
  
-if len(sys.argv) == 2:
+if len(sys.argv) == 3:
+        sensor = dev[int(sys.argv[1])]
+        tilt = int(sys.argv[2])
+        print "Setting %d tilt to %d" % (int(sys.argv[1]), tilt)
+        freenect.set_tilt_degs(sensor, tilt)
+elif len(sys.argv) == 2:
 	tilt = int(sys.argv[1])
 	print "Setting tilt to %d" % tilt
 	for sensor in dev:
@@ -21,8 +26,8 @@ if len(sys.argv) == 2:
 else:
 	print "Setting custom tilts"
 	print "[0] --> -20"
-	freenect.set_tilt_degs(dev[0], -20)
+	freenect.set_tilt_degs(dev[0], 8)
 	print "[1] --> -20"
-	freenect.set_tilt_degs(dev[1], -20)
-	print "[2] --> -30"
-	freenect.set_tilt_degs(dev[2], -30)
+	freenect.set_tilt_degs(dev[1], -16)
+	print "[2] --> -20"
+	freenect.set_tilt_degs(dev[2], -16)
