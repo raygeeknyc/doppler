@@ -3,4 +3,4 @@ logger "$0"
 sudo rmmod gspca_kinect
 sudo modprobe gspca_kinect
 sudo python set_tilt.py
-sudo python multisensor.py
+sudo nohup python multisensor.py
