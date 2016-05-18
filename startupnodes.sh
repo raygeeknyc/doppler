@@ -1,4 +1,5 @@
 #!/bin/bash
+logger "$0"
 SUBNET="192.168.0"
 for node in 108 107 106 105 104 103 102 101
 do
