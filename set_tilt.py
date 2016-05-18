@@ -25,9 +25,9 @@ elif len(sys.argv) == 2:
 	    freenect.set_tilt_degs(sensor, tilt)
 else:
 	print "Setting custom tilts"
-	print "[0] --> -2"
+	print "[0] --> -23"
 	freenect.set_tilt_degs(dev[0], -23)
-	print "[1] --> -21"
+	print "[1] --> -24"
 	freenect.set_tilt_degs(dev[1], -24)
-	print "[2] --> -21"
+	print "[2] --> -24"
 	freenect.set_tilt_degs(dev[2], -24)
