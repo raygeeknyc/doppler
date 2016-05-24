@@ -11,5 +11,5 @@
 #
 # By default this script does nothing.
 logger "starting doppler wall from rc.local"
-su --login doppler --command "cd /home/doppler/doppler;./start_wall.sh &"
+su --login --command "cd /home/doppler/doppler;nohup ./start_wall.sh &" doppler
 exit 0

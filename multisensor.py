@@ -185,6 +185,7 @@ def main(argv):
 	logging.info("STITCHED_COLUMNS, STITCHED_ROWS = %d, %d" % (STITCHED_COLUMNS, STITCHED_ROWS))
 	logging.info("Target rate is %f, which is a frequency of %f" % (TARGET_FPS, _MAX_REFRESH_FREQUENCY))
         stitcher=Stitcher(KINECT_INDEX_LEFT, KINECT_INDEX_CENTER, KINECT_INDEX_RIGHT, testing=DEBUG_SENSOR)
+	logging.info("found cameras")
 	stitcher.initPlotter()
 	while True:
 		start = time.time()
