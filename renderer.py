@@ -21,7 +21,7 @@ import zlib
 HOST = ''  # Symbolic name meaning the local host
 MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
-CELL_IDLE_TIME = 2  # Set cells to idle after this many secs of inactivity
+CELL_IDLE_TIME = 1  # Set cells to idle after this many secs of inactivity
 
 # The shapes that we know how to render
 _CIRCLE = 1
@@ -139,14 +139,12 @@ class App:
         self._plot(RGB, (x, y))
 
     def _plotExpiredCells(self, stillColor):
-        self._surface.lock()
         start = time.time()
         for x in xrange(len(self._cells)):
             for y in xrange(len(self._cells[x])):
                 if (self._cells[x][y].ttl) and (self._cells[x][y].ttl < start):
                     self._draw(x, y, stillColor)
                     self._cells[x][y].ttl = 0
-        self._surface.unlock()
 
     def redraw(self):                          
         """Redraw all idle cells and updated cells, clear the updated list."""
@@ -161,10 +159,8 @@ class App:
 
         start = time.time()
 	redraw_count = len(self._changedCells)
-        self._surface.lock()
         for cellToRefresh in self._changedCells:
             self._draw(cellToRefresh.col, cellToRefresh.row, cellToRefresh.color)
-        self._surface.unlock()
         self._changedCells = []
         self.redraw_time_consumption = (time.time() - start)
 	return redraw_count
