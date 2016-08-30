@@ -8,4 +8,5 @@ sleep 60
 ./startupnodes.sh < /dev/null
 logger "$0 waiting 30s for node startup"
 sleep 30
+./set_modules.sh
 ./startsensor.sh < /dev/null
