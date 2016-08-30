@@ -1,9 +1,9 @@
 #!/bin/bash
 # run as root
-rmmod gspca_kinect
-rmmod gspca_main
-modprobe gspca_main
-modprobe gspca_kinect
+sudo rmmod gspca_kinect
+sudo rmmod gspca_main
+sudo modprobe gspca_main
+sudo modprobe gspca_kinect
 if [[ "$1" == "debug" ]]; then
   echo "debugging"
   python singlesensor.py

@@ -5,7 +5,7 @@ sudo killall -9 startsensor.sh
 ./rebootnodes.sh
 logger "$0 waiting 60s for reboots"
 sleep 60
-./startupnodes.sh
+./startupnodes.sh < /dev/null
 logger "$0 waiting 30s for node startup"
 sleep 30
 ./startsensor.sh < /dev/null
