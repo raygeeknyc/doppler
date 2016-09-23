@@ -19,6 +19,7 @@ _LIGHTGREY = (45,45,55)
 _DIMBLUE = (45,45,120)
 _DIMRED = (120,45,45)
 _DIMGREY = (20,15,20)
+NEUTRAL_COLOR = (0,0,0)
 
 CELL_COLORS = {
     update_message.CellState.CHANGE_APPROACH_SLOW: _DIMBLUE,
@@ -26,5 +27,4 @@ CELL_COLORS = {
     update_message.CellState.CHANGE_RECEDE_SLOW: _DIMRED,
     update_message.CellState.CHANGE_RECEDE_FAST: _BRIGHTRED,
     update_message.CellState.CHANGE_REST: _LIGHTGREY,
-    update_message.CellState.CHANGE_STILL: _DIMGREY}
-NEUTRAL_COLOR = (0,0,0)
+    update_message.CellState.CHANGE_STILL: NEUTRAL_COLOR}
