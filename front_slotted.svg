@@ -9,11 +9,11 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="744.09448819"
-   height="1052.3622047"
+   width="1052.3622"
+   height="744.09448"
    id="svg3763"
    version="1.1"
-   inkscape:version="0.48.3.1 r9886"
+   inkscape:version="0.91 r13725"
    sodipodi:docname="front_slotted.svg">
   <defs
      id="defs3765" />
@@ -25,16 +25,16 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.4646504"
-     inkscape:cx="204.5"
-     inkscape:cy="777.50281"
+     inkscape:cx="883.50507"
+     inkscape:cy="372.89754"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1280"
-     inkscape:window-height="667"
-     inkscape:window-x="0"
-     inkscape:window-y="31"
-     inkscape:window-maximized="1" />
+     inkscape:window-height="698"
+     inkscape:window-x="39"
+     inkscape:window-y="143"
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata3768">
     <rdf:RDF>
@@ -50,16 +50,19 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(0,-308.2677)">
     <path
        style="fill:none;stroke:#0000ff;stroke-width:2.08536744;stroke-opacity:1"
-       d="m 698.45312,5.890625 -449.40625,0 0,21.03125 -89.09375,0 0,-21.03125 -428.37499,0 0,223.531245 -21.03125,0 0,90.875 21.03125,0 0,223.53125 966.87499,0 0,-224.375 -21.0625,0 0,-89.1875 21.0625,0 0,-224.374995 z"
+       d="m 1022.4531,923.82812 -449.40623,0 0,-21.03125 -89.09375,0 0,21.03125 -428.37499,0 0,-223.53124 -21.03125,0 0,-90.875 21.03125,0 0,-223.53125 966.87497,0 0,224.375 -21.0625,0 0,89.1875 21.0625,0 0,224.37499 z"
        id="rect5411"
        inkscape:connector-curvature="0" />
-    <path
-       style="fill:none;stroke:#00ff00;stroke-opacity:1"
-       d="m 271.5,262.35937 -49,0 0,-21.5 -72,0 0,21.5 -49,0 0,25 49,0 0,21.5 72,0 0,-21.5 49,0 0,-25 z"
-       id="rect5427"
-       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#00ff00;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect4194"
+       width="566.92126"
+       height="106.29922"
+       x="245.03542"
+       y="555.79919" />
   </g>
 </svg>

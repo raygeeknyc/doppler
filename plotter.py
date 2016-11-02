@@ -63,10 +63,25 @@ class Plotter:
 	self.ROWS = None
 	self.COLUMNS = None
 	self._setupSocket()
+<<<<<<< HEAD
 	self._getRendererConfig((0,1))
+=======
+	self._getFirstRendererConfig()
+>>>>>>> ef7f26851762e3ae41f544a6d425b06fb20b2fdc
 
     def _setupSocket(self):
 	self._updateSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def _getFirstRendererConfig(self):
+	for zone_x in xrange(config.ZONES[0]):
+		for zone_y in xrange(config.ZONES[1]):
+			zone = (zone_x, zone_y)
+			try:
+				return self._getRendererConfig(zone)
+			except:
+				logging.exception("Error getting config for "+zone)
+				continue
+	raise Exception("No renderer configs found in zones: "+zones)
 
     def _getRendererConfig(self, zone):
 	logging.debug("_getRendererConfig()")
