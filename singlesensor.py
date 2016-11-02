@@ -128,7 +128,7 @@ class Stitcher(sensor.BaseStitcher):
 		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
 def main(argv):
-	print("singlesensor:main()")
+	logging.info("singlesensor:main()")
         if len(sys.argv) > 1 and sys.argv[1] == "debug":
 		DEBUG_SENSOR = True
 	else:

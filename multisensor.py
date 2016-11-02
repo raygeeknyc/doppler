@@ -174,7 +174,7 @@ class Stitcher(sensor.BaseStitcher):
 		self.COL_LIMIT = self.plotter.COLUMNS - 1
 
 def main(argv):
-	print("multisensor:main()")
+	logging.info("multisensor:main()")
         if len(sys.argv) > 1 and sys.argv[1] == "debug":
                 DEBUG_SENSOR = True
         else:

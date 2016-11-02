@@ -10,4 +10,5 @@ sudo rmmod gspca_kinect
 sudo rmmod gspca_main
 sudo modprobe gspca_main
 sudo modprobe gspca_kinect
+echo "starting sensor"
 sudo python multisensor.py
