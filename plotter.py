@@ -63,11 +63,7 @@ class Plotter:
 	self.ROWS = None
 	self.COLUMNS = None
 	self._setupSocket()
-<<<<<<< HEAD
-	self._getRendererConfig((0,1))
-=======
 	self._getFirstRendererConfig()
->>>>>>> ef7f26851762e3ae41f544a6d425b06fb20b2fdc
 
     def _setupSocket(self):
 	self._updateSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
