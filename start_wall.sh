@@ -12,4 +12,4 @@ logger "$0 waiting 30s for node startup"
 sleep 30
 ./set_modules.sh
 sudo python set_tilt.py
-./startsensor.sh < /dev/null
+./startsensor.sh debug < /dev/null
