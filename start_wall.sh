@@ -8,8 +8,8 @@ sleep 60
 logger "killing startsensor.sh"
 sudo killall -9 startsensor.sh
 ./startupnodes.sh < /dev/null
-logger "$0 waiting 30s for node startup"
-sleep 30
+logger "$0 waiting 60s for node startup"
+sleep 60
 ./set_modules.sh
 sudo python set_tilt.py
-./startsensor.sh debug < /dev/null
+./startsensor.sh < /dev/null

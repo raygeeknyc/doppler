@@ -6,3 +6,4 @@ do
 	echo ${SUBNET}.${node}
 	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@${SUBNET}.${node} "cd doppler;killall -9 run_renderer.sh;killall -9 python;nohup ./run_renderer.sh"  < /dev/null > ./node_${node}.out 2>&1  &
 done
+jobs

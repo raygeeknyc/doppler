@@ -198,7 +198,7 @@ def main(argv):
 		if frequency < _MAX_REFRESH_FREQUENCY:                                  
 			time.sleep((_MAX_REFRESH_FREQUENCY - frequency))                
 		frequency = time.time() - start
-		logging.info("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
+		logging.debug("effective frequency is %f which is %f FpS" % (frequency, (1/frequency)))
 
 if __name__ == "__main__":
 	main(sys.argv)

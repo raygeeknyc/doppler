@@ -12,13 +12,13 @@ import time
 import zlib
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_APPROACH_THRESHOLD = 20
-FAST_RECEDE_THRESHOLD = -20
+FAST_APPROACH_THRESHOLD = 15
+FAST_RECEDE_THRESHOLD = -25
 # The minimum change in distance that is seen as a "slow" approach or recession
-SLOW_APPROACH_THRESHOLD = 8
-SLOW_RECEDE_THRESHOLD = -8
+SLOW_APPROACH_THRESHOLD = 7
+SLOW_RECEDE_THRESHOLD = -7
 # The minimum change in absolute distance that we see as motion
-DISTANCE_MOTION_THRESHOLD = 5
+DISTANCE_MOTION_THRESHOLD = 6
 
 # How many cell updates to send in one message to a renderer
 #MAXIMUM_CELL_UPDATES_PER_MESSAGE = 300  # This should be < 1400 bytes
