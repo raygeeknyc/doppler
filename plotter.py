@@ -12,8 +12,8 @@ import time
 import zlib
 
 # The minimum change in distance that is seen as a "fast" approach or recession
-FAST_APPROACH_THRESHOLD = 15
-FAST_RECEDE_THRESHOLD = -25
+FAST_APPROACH_THRESHOLD = 22
+FAST_RECEDE_THRESHOLD = -22
 # The minimum change in distance that is seen as a "slow" approach or recession
 SLOW_APPROACH_THRESHOLD = 7
 SLOW_RECEDE_THRESHOLD = -7
