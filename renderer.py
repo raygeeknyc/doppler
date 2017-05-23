@@ -5,6 +5,7 @@ import config
 import logging
 import pixelblock
 from pixelblock import PixelBlock
+from pixelblock import SHAPE
 import pygame
 from pygame.locals import *
 import update_message
@@ -23,13 +24,8 @@ MAXIMUM_UPDATE_MESSAGE_LEN = 8*1024
 
 CELL_IDLE_TIME = 0.2  # Set cells to idle after this many secs of inactivity
 
-# The shapes that we know how to render
-_CIRCLE = 1
-_RECT = 2
-
 # Set the shape of a plotted pixel to _CIRCLE or _RECT
-PIXEL_SHAPE = _RECT
-PIXEL_SHAPE = _CIRCLE
+PIXEL_SHAPE = SHAPE
 
 def MemUsedMB():
     usage=resource.getrusage(resource.RUSAGE_SELF)
@@ -69,7 +65,7 @@ class App:
         self.redraw_time_consumption = 0.0
         self.redraw_cycle_timestamp = 0.0
         self.redraw_cycle_time = 0.0
-        self._plot = self._plot_circle if (PIXEL_SHAPE == _CIRCLE) else self._plot_rect
+        self._plot = self._plot_circle if (PIXEL_SHAPE == pixelblock.CIRCLE) else self._plot_rect
 	self._initializeDisplay(surface, info)
         logging.info("%d X %d pixels\n" % (self._screen_width, self._screen_height))
         logging.info("%d X %d cells\n" % (self._cols, self._rows))
