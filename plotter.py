@@ -73,9 +73,10 @@ class Plotter:
 		for zone_y in xrange(config.ZONES[1]):
 			zone = (zone_x, zone_y)
 			try:
+                                logging.info("querying config from "+str(zone))
 				return self._getRendererConfig(zone)
 			except:
-				logging.exception("Error getting config for "+zone)
+				logging.exception("Error getting config for "+str(zone)+" trying next")
 				continue
 	raise Exception("No renderer configs found in zones: "+zones)
 
